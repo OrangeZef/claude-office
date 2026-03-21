@@ -1,4 +1,15 @@
-# Claude Office Visualizer
+# Coffice — Claude Office Visualizer (Joka.ca Fork)
+
+> **Fork of [paulrobello/claude-office](https://github.com/paulrobello/claude-office)** — heavily customized for the Joka.ca AI-managed office environment.
+>
+> **Changes from upstream:**
+> - **Ambient idle workers** — 3 NPC visitor workers cycle through the office via elevator, sit at free desks, comment, then leave; yield desks when a real agent arrives
+> - **Anime character sprites** — boss and workers rendered with sprite-sheet animation (anime-boss, anime-worker, aqua, darkness, megumin2 variants); uniform height normalization across all character types
+> - **Elevator coordination** — shared reference counter prevents race conditions when multiple workers use the elevator simultaneously
+> - **Office props** — cats (procedurally drawn, wander to POIs), cat furniture (beds, trees, food bowls), coffee table, server racks, JokaSign wall panel, animated warning light
+> - **Dynamic API base URL** — frontend derives backend URL from browser origin; works from any host/IP without reconfiguration
+> - **Session display names** — first user prompt auto-saved as session display name; startup migration guard for existing DBs
+> - **Branding** — "Coffice by Joka.ca" header, JokaSign above elevator
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 ![GitHub](https://img.shields.io/badge/github-paulrobello%2Fclaude--office-blue?logo=github)

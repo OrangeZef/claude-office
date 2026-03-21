@@ -11,6 +11,7 @@ Public surface (unchanged from before the refactor):
 import asyncio
 import contextlib
 import logging
+import re
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -538,6 +539,20 @@ class EventProcessor:
                     logger.info(
                         f"Cached project_root for session {event.session_id}: {project_root}"
                     )
+
+                # Set display_name from the first real user prompt
+                if (
+                    event.event_type == EventType.USER_PROMPT_SUBMIT
+                    and not session_rec.display_name
+                    and event.data
+                    and event.data.prompt
+                    and event.data.prompt.strip()
+                    and "<task-notification>" not in event.data.prompt
+                    and (not event.data.agent_id or event.data.agent_id == "main")
+                ):
+                    raw = event.data.prompt.strip()
+                    flat = re.sub(r"\s+", " ", raw)
+                    session_rec.display_name = flat[:60] + ("…" if len(flat) > 60 else "")
 
                 if event.event_type == EventType.SESSION_START:
                     await db.execute(

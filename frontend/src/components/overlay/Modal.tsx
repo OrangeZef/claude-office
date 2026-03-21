@@ -32,19 +32,20 @@ export default function Modal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
       <div
-        className="bg-slate-900 border border-slate-800 rounded-xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200"
+        className="bg-[#0d0d0d] border border-yellow-400/20 rounded-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200"
+        style={{ boxShadow: "0 0 20px rgba(234,179,8,0.35), 0 0 40px rgba(234,179,8,0.1), 0 25px 50px rgba(0,0,0,0.9)" }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-900/50">
-          <h2 className="text-lg font-bold text-white tracking-tight">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-yellow-400/25 bg-black/40">
+          <h2 className="font-mono text-lg font-bold uppercase tracking-widest text-yellow-400">
             {title}
           </h2>
           <button
             onClick={onClose}
-            className="p-1 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition-colors"
+            className="p-2 hover:bg-yellow-400/15 rounded-lg text-slate-400 hover:text-yellow-400 transition-all"
           >
             <X size={20} />
           </button>
@@ -57,7 +58,7 @@ export default function Modal({
 
         {/* Footer */}
         {footer && (
-          <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-800 bg-slate-900/50">
+          <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-yellow-400/25 bg-black/40">
             {footer}
           </div>
         )}

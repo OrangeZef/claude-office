@@ -48,7 +48,7 @@ function ThinkingEntry({ entry }: { entry: ConversationEntry }) {
   const preview = isLong ? entry.text.slice(0, 200) + "…" : entry.text;
 
   return (
-    <div className="flex items-start gap-2 px-2 py-1.5 rounded-lg bg-indigo-950/30 border border-indigo-800/30">
+    <div className="flex items-start gap-2 px-2 py-1.5 rounded-lg bg-indigo-900/25 border border-indigo-700/40">
       <Brain size={12} className="text-indigo-400 flex-shrink-0 mt-0.5" />
       <div className="min-w-0 flex-1">
         <div className="text-[9px] uppercase tracking-widest text-indigo-500 mb-1 font-bold">
@@ -94,7 +94,7 @@ function UserEntry({ entry }: { entry: ConversationEntry }) {
   return (
     <div className="flex flex-col items-end">
       <div className="max-w-[85%]">
-        <div className="bg-cyan-900/40 border border-cyan-700/40 rounded-xl rounded-tr-sm px-3 py-2">
+        <div className="bg-cyan-900/40 border border-cyan-700/40 rounded-xl rounded-tr-sm px-3 py-2 shadow-lg shadow-cyan-500/10">
           <p className="text-cyan-100 text-[11px] whitespace-pre-wrap break-words leading-relaxed">
             {entry.text}
           </p>
@@ -141,11 +141,11 @@ function MarkdownContent({ text }: { text: string }) {
         code: ({ children, className }) => {
           const isBlock = className?.startsWith("language-");
           return isBlock ? (
-            <code className="block bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-[10px] font-mono text-emerald-300 overflow-x-auto whitespace-pre my-1">
+            <code className="block bg-slate-950/80 border border-slate-700/60 rounded px-2 py-1.5 text-[10px] font-mono text-[#00ff00] overflow-x-auto whitespace-pre my-1">
               {children}
             </code>
           ) : (
-            <code className="bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-[10px] font-mono text-emerald-300">
+            <code className="bg-slate-950/80 border border-slate-700/60 rounded px-1 py-0.5 text-[10px] font-mono text-[#00ff00]">
               {children}
             </code>
           );
@@ -342,9 +342,7 @@ export function ConversationHistory() {
         {header(() => setExpanded(true))}
         <div className="flex-grow overflow-y-auto p-3 space-y-2">
           {conversation.length === 0 ? (
-            <div className="text-slate-600 italic p-4 text-center">
-              No conversation yet. Start a Claude Code session.
-            </div>
+            <div className="text-slate-600 italic text-center p-4 font-mono text-xs">💬 No conversation yet. Start a Claude Code session.</div>
           ) : (
             <ConversationEntries visible={visible} bottomRef={bottomRef} />
           )}
@@ -365,9 +363,7 @@ export function ConversationHistory() {
             {header()}
             <div className="flex-grow overflow-y-auto p-4 space-y-2">
               {conversation.length === 0 ? (
-                <div className="text-slate-600 italic p-4 text-center">
-                  No conversation yet. Start a Claude Code session.
-                </div>
+                <div className="text-slate-600 italic text-center p-4 font-mono text-xs">💬 No conversation yet. Start a Claude Code session.</div>
               ) : (
                 <ConversationEntries
                   visible={visible}

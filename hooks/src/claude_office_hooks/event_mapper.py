@@ -58,6 +58,10 @@ def get_project_name(raw_data: dict[str, Any], strip_prefixes: list[str] | None 
                             project_name = project_name[len(prefix):]
                             break
 
+                # If stripping removed the entire name, fall back to cwd basename
+                if not project_name:
+                    cwd = raw_data.get("cwd", "")
+                    project_name = Path(cwd).name if cwd else raw_project_name
                 return project_name
         except (ValueError, IndexError):
             pass  # Fall through to cwd fallback

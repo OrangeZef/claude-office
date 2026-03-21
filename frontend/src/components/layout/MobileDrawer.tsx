@@ -76,14 +76,14 @@ export function MobileDrawer({
       />
 
       {/* Drawer Panel */}
-      <div className="absolute left-0 top-0 bottom-0 w-80 bg-slate-900 border-r border-slate-800 overflow-y-auto animate-in slide-in-from-left duration-300">
+      <div className="absolute left-0 top-0 bottom-0 w-80 bg-[#0a0a0a] border-r border-yellow-400/20 overflow-y-auto animate-in slide-in-from-left duration-300">
         <div className="p-4">
           {/* Drawer Header */}
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-white">Menu</h2>
+            <h2 className="text-lg font-bold font-mono text-white">Menu</h2>
             <button
               onClick={onClose}
-              className="p-2 hover:bg-slate-800 rounded-lg text-slate-400"
+              className="p-2 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-yellow-400 transition-colors"
             >
               <X size={20} />
             </button>
@@ -93,21 +93,21 @@ export function MobileDrawer({
           <div className="flex flex-col gap-2 mb-6">
             <button
               onClick={handleSimulate}
-              className="flex items-center gap-2 px-3 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 border border-emerald-500/30 rounded text-sm font-bold transition-colors"
+              className="flex items-center gap-2 px-3 py-2 bg-yellow-400/10 hover:bg-yellow-400/20 text-yellow-400 border border-yellow-400/30 rounded text-sm font-mono font-bold uppercase tracking-wide transition-colors"
             >
               <Play size={16} fill="currentColor" />
               SIMULATE
             </button>
             <button
               onClick={handleReset}
-              className="flex items-center gap-2 px-3 py-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 border border-amber-500/30 rounded text-sm font-bold transition-colors"
+              className="flex items-center gap-2 px-3 py-2 bg-green-400/10 hover:bg-green-400/20 text-green-400 border border-green-400/30 rounded text-sm font-mono font-bold uppercase tracking-wide transition-colors"
             >
               <RefreshCw size={16} />
               RESET
             </button>
             <button
               onClick={handleClearDB}
-              className="flex items-center gap-2 px-3 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 border border-rose-500/30 rounded text-sm font-bold transition-colors"
+              className="flex items-center gap-2 px-3 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 rounded text-sm font-mono font-bold uppercase tracking-wide transition-colors"
             >
               <Trash2 size={16} />
               CLEAR DB
@@ -117,7 +117,7 @@ export function MobileDrawer({
           {/* Sessions Panel */}
           <div className="mb-6">
             <div className="flex items-center gap-2 mb-3">
-              <History size={14} className="text-purple-500" />
+              <History size={14} className="text-yellow-400" />
               <span className="text-slate-300 font-bold uppercase tracking-wider text-xs">
                 Sessions
               </span>
@@ -145,7 +145,7 @@ export function MobileDrawer({
                       key={session.id}
                       className={`px-3 py-2.5 rounded-md cursor-pointer transition-colors ${
                         isActive
-                          ? "bg-purple-500/20 border-l-2 border-purple-500"
+                          ? "bg-yellow-400/10 border-l-2 border-yellow-400"
                           : "hover:bg-slate-800/50"
                       }`}
                       onClick={() => {
@@ -171,10 +171,10 @@ export function MobileDrawer({
                         )}
                         <span
                           className={`text-xs font-bold truncate ${
-                            isActive ? "text-purple-300" : "text-slate-300"
+                            isActive ? "text-yellow-400" : "text-slate-300"
                           }`}
                         >
-                          {session.projectName || "Unknown Project"}
+                          {session.displayName ?? session.projectName ?? "Unknown Project"}
                         </span>
                       </div>
                       <div className="flex justify-between text-[10px] text-slate-500">

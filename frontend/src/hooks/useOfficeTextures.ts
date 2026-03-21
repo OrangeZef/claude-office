@@ -44,6 +44,10 @@ export interface OfficeTextures {
   rubiksCube: Texture | null;
   rubberDuck: Texture | null;
   thermos: Texture | null;
+  animeBoss: Texture | null;
+  jkLogo: Texture | null;
+  animeBossFrames: Texture[];
+  workerVariants: Texture[][];
 }
 
 interface UseOfficeTexturesResult {
@@ -51,7 +55,9 @@ interface UseOfficeTexturesResult {
   loaded: boolean;
 }
 
-const TEXTURE_PATHS: Record<keyof OfficeTextures, string> = {
+type SingleTextureKeys = Exclude<keyof OfficeTextures, "animeBossFrames" | "workerVariants">;
+
+const TEXTURE_PATHS: Record<SingleTextureKeys, string> = {
   floorTile: "/sprites/floor-tile.png",
   bossRug: "/sprites/boss-rug.png",
   waterCooler: "/sprites/watercooler.png",
@@ -76,6 +82,8 @@ const TEXTURE_PATHS: Record<keyof OfficeTextures, string> = {
   rubiksCube: "/sprites/rubiks-cube.png",
   rubberDuck: "/sprites/rubber-duck.png",
   thermos: "/sprites/thermos.png",
+  animeBoss: "/sprites/anime-boss.png",
+  jkLogo: "/jk-logo.png",
 };
 
 const EMPTY_TEXTURES: OfficeTextures = {
@@ -103,6 +111,10 @@ const EMPTY_TEXTURES: OfficeTextures = {
   rubiksCube: null,
   rubberDuck: null,
   thermos: null,
+  animeBoss: null,
+  jkLogo: null,
+  animeBossFrames: [],
+  workerVariants: [],
 };
 
 /**
@@ -116,7 +128,7 @@ export function useOfficeTextures(): UseOfficeTexturesResult {
   useEffect(() => {
     const loadTextures = async () => {
       try {
-        const keys = Object.keys(TEXTURE_PATHS) as (keyof OfficeTextures)[];
+        const keys = Object.keys(TEXTURE_PATHS) as SingleTextureKeys[];
         const paths = keys.map((key) => TEXTURE_PATHS[key]);
 
         const loadedTextures = await Promise.all(
@@ -128,12 +140,47 @@ export function useOfficeTextures(): UseOfficeTexturesResult {
             acc[key] = loadedTextures[index];
             return acc;
           },
-          {} as Record<keyof OfficeTextures, Texture>,
+          {} as Record<SingleTextureKeys, Texture>,
         );
 
-        setTextures(textureMap as OfficeTextures);
+        // Load anime frame arrays — gracefully skip any that fail
+        const bossFramePaths = [0, 1, 2, 3, 4, 5].map(
+          (i) => `/sprites/anime-boss-${i}.png`,
+        );
+
+        const bossFrameResults = await Promise.all(
+          bossFramePaths.map((path) =>
+            Assets.load(path).catch(() => null),
+          ),
+        );
+
+        const animeBossFrames = bossFrameResults.filter(
+          (t): t is Texture => t !== null,
+        );
+
+        // Load all worker variant frame sets
+        const variantNames = ['anime-worker', 'darkness', 'aqua', 'megumin2'];
+        const variantResults = await Promise.all(
+          variantNames.map((name) =>
+            Promise.all(
+              [0, 1, 2, 3, 4, 5].map((i) =>
+                Assets.load(`/sprites/${name}-${i}.png`).catch(() => null),
+              ),
+            ),
+          ),
+        );
+        const workerVariants: Texture[][] = variantResults.map((frames) =>
+          frames.filter((t): t is Texture => t !== null),
+        );
+
+        setTextures({
+          ...textureMap,
+          animeBossFrames,
+          workerVariants,
+        } as OfficeTextures);
         setLoaded(true);
-      } catch {
+      } catch (err) {
+        console.error("[useOfficeTextures] Failed to load one or more textures:", err);
         // Still mark as loaded to show fallback graphics
         setLoaded(true);
       }

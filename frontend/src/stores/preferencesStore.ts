@@ -1,6 +1,7 @@
 "use client";
 
 import { create } from "zustand";
+import { API_BASE_URL } from "@/lib/apiBase";
 
 // ============================================================================
 // TYPES
@@ -27,9 +28,9 @@ interface PreferencesState {
 // CONSTANTS
 // ============================================================================
 
-const API_BASE = "http://localhost:8000/api/v1/preferences";
+const API_BASE = `${API_BASE_URL}/api/v1/preferences`;
 
-const DEFAULT_CLOCK_TYPE: ClockType = "analog";
+const DEFAULT_CLOCK_TYPE: ClockType = "digital";
 const DEFAULT_CLOCK_FORMAT: ClockFormat = "12h";
 const DEFAULT_AUTO_FOLLOW_NEW_SESSIONS = true;
 

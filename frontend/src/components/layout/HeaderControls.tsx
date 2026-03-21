@@ -48,83 +48,92 @@ export function HeaderControls({
   onOpenHelp,
 }: HeaderControlsProps): React.ReactNode {
   return (
-    <div className="flex gap-4 items-center">
+    <div className="flex gap-1.5 lg:gap-3 items-center shrink-0">
       <button
+        title="Simulate"
         onClick={onSimulate}
-        className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 border border-emerald-500/30 rounded text-xs font-bold transition-colors"
+        className="flex items-center gap-1.5 px-2 py-1.5 lg:px-3 bg-yellow-400 hover:bg-yellow-500 text-black border border-yellow-400 rounded text-xs font-mono font-bold uppercase tracking-wide transition-all focus-visible:ring-2 focus-visible:ring-yellow-400 focus-visible:outline-none"
       >
         <Play size={14} fill="currentColor" />
-        SIMULATE
+        <span className="hidden lg:inline">SIMULATE</span>
       </button>
 
       <button
+        title="Reset"
         onClick={onReset}
-        className="flex items-center gap-2 px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 border border-amber-500/30 rounded text-xs font-bold transition-colors"
+        className="flex items-center gap-1.5 px-2 py-1.5 lg:px-3 bg-[#0d0d0d] hover:bg-yellow-400 text-yellow-400 hover:text-black border border-yellow-400/30 hover:border-yellow-400 rounded text-xs font-mono font-bold uppercase tracking-wide transition-all focus-visible:ring-2 focus-visible:ring-yellow-400 focus-visible:outline-none"
       >
         <RefreshCw size={14} />
-        RESET
+        <span className="hidden lg:inline">RESET</span>
       </button>
 
       <button
+        title="Clear DB"
         onClick={onClearDB}
-        className="flex items-center gap-2 px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 border border-rose-500/30 rounded text-xs font-bold transition-colors"
+        className="flex items-center gap-1.5 px-2 py-1.5 lg:px-3 bg-[#0d0d0d] hover:bg-red-500 text-red-400 hover:text-white border border-red-500/30 hover:border-red-500 rounded text-xs font-mono font-bold uppercase tracking-wide transition-all focus-visible:ring-2 focus-visible:ring-yellow-400 focus-visible:outline-none"
       >
         <Trash2 size={14} />
-        CLEAR DB
+        <span className="hidden lg:inline">CLEAR DB</span>
       </button>
 
       <button
+        title={`Debug ${debugMode ? "ON" : "OFF"}`}
         onClick={onToggleDebug}
-        className={`flex items-center gap-2 px-3 py-1.5 border rounded text-xs font-bold transition-colors ${
+        className={`flex items-center gap-1.5 px-2 py-1.5 lg:px-3 border rounded text-xs font-mono font-bold uppercase tracking-wide transition-all ${
           debugMode
-            ? "bg-green-500/20 text-green-400 border-green-500/30"
-            : "bg-slate-500/10 text-slate-400 border-slate-500/30 hover:bg-slate-500/20"
-        }`}
+            ? "bg-yellow-400/20 text-yellow-300 border-yellow-400"
+            : "bg-[#0d0d0d] text-slate-400 border-slate-500/30 hover:bg-yellow-400/10 hover:text-yellow-400 hover:border-yellow-400/30"
+        } focus-visible:ring-2 focus-visible:ring-yellow-400 focus-visible:outline-none`}
       >
         <Bug size={14} />
-        DEBUG {debugMode ? "ON" : "OFF"}
+        <span className="hidden lg:inline">DEBUG {debugMode ? "ON" : "OFF"}</span>
       </button>
 
       <button
+        title="Settings"
         onClick={onOpenSettings}
-        className="flex items-center gap-2 px-3 py-1.5 bg-slate-500/10 hover:bg-slate-500/20 text-slate-400 border border-slate-500/30 rounded text-xs font-bold transition-colors"
+        className="flex items-center gap-1.5 px-2 py-1.5 lg:px-3 bg-[#0d0d0d] hover:bg-yellow-400 text-yellow-400 hover:text-black border border-yellow-400/30 hover:border-yellow-400 rounded text-xs font-mono font-bold uppercase tracking-wide transition-all focus-visible:ring-2 focus-visible:ring-yellow-400 focus-visible:outline-none"
       >
         <Settings size={14} />
-        SETTINGS
+        <span className="hidden lg:inline">SETTINGS</span>
       </button>
 
       <button
+        title="Help"
         onClick={onOpenHelp}
-        className="flex items-center gap-2 px-3 py-1.5 bg-slate-500/10 hover:bg-slate-500/20 text-slate-400 border border-slate-500/30 rounded text-xs font-bold transition-colors"
+        className="flex items-center gap-1.5 px-2 py-1.5 lg:px-3 bg-[#0d0d0d] hover:bg-yellow-400 text-yellow-400 hover:text-black border border-yellow-400/30 hover:border-yellow-400 rounded text-xs font-mono font-bold uppercase tracking-wide transition-all focus-visible:ring-2 focus-visible:ring-yellow-400 focus-visible:outline-none"
       >
         <HelpCircle size={14} />
-        HELP
+        <span className="hidden lg:inline">HELP</span>
       </button>
 
       {/* Connection and AI status */}
-      <div className="flex flex-col items-end border-l border-slate-800 pl-4">
-        <span className="text-[10px] uppercase font-bold text-slate-500 tracking-widest leading-none mb-1">
+      <div className="flex flex-col items-end border-l border-yellow-400/15 pl-2 lg:pl-4 shrink-0">
+        <span className="text-[10px] uppercase font-mono font-bold text-yellow-400/80 tracking-widest leading-none mb-1 hidden lg:block">
           Status
         </span>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <div
             className={`flex items-center gap-1.5 font-mono text-xs ${
-              isConnected ? "text-emerald-400" : "text-rose-500"
+              isConnected ? "text-green-400" : "text-rose-500"
             }`}
           >
-            <Activity
-              size={12}
-              className={isConnected ? "animate-pulse" : ""}
+            <span
+              className={`inline-block w-2 h-2 rounded-full flex-shrink-0 ${
+                isConnected
+                  ? "bg-green-400 shadow-[0_0_8px_rgba(0,255,0,0.6)]"
+                  : "bg-red-500"
+              }`}
             />
-            {isConnected ? "CONNECTED" : "DISCONNECTED"}
+            <span className="hidden lg:inline">{isConnected ? "CONNECTED" : "DISCONNECTED"}</span>
           </div>
           <div
-            className={`flex items-center gap-1.5 font-mono text-xs ${
-              aiSummaryEnabled ? "text-violet-400" : "text-slate-500"
+            className={`flex items-center gap-1 font-mono text-xs ${
+              aiSummaryEnabled ? "text-yellow-400" : "text-slate-500"
             }`}
           >
             <span className="text-[10px]">AI</span>
-            {aiSummaryEnabled ? "ON" : "OFF"}
+            <span className="hidden lg:inline">{aiSummaryEnabled ? "ON" : "OFF"}</span>
           </div>
         </div>
       </div>

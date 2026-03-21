@@ -22,7 +22,7 @@ import {
 function getBackendStateColor(state: string) {
   switch (state) {
     case "working":
-      return "bg-amber-500/20 text-amber-400 border-amber-500/40";
+      return "bg-yellow-500/20 text-[#eab308] border-[#eab308]/40";
     case "waiting_permission":
       return "bg-orange-500/20 text-orange-400 border-orange-500/40";
     case "reporting":
@@ -49,7 +49,7 @@ function getBackendStateColor(state: string) {
 function getPhaseColor(phase: string) {
   switch (phase) {
     case "idle":
-      return "bg-emerald-500/20 text-emerald-400 border-emerald-500/40";
+      return "bg-green-500/20 text-[#00ff00] border-green-400/40";
     case "arriving":
     case "in_arrival_queue":
     case "walking_to_ready":
@@ -107,17 +107,17 @@ export function AgentStatus() {
       {/* Agent list - scrollable, fills remaining height */}
       <div className="flex-grow overflow-y-auto p-2 space-y-2 min-h-0">
         {agentArray.length === 0 ? (
-          <div className="text-slate-600 italic p-4 text-center">No agents</div>
+          <div className="text-slate-600 italic text-center p-4 font-mono text-xs">⏳ No agents yet...</div>
         ) : (
           agentArray.map((agent) => (
             <div
               key={agent.id}
-              className="bg-slate-900/60 border border-slate-800 rounded-md overflow-hidden hover:border-slate-700 transition-colors"
+              className="bg-slate-900/40 backdrop-blur-sm border border-slate-800 rounded-md overflow-hidden hover:border-slate-700 transition-colors"
             >
               {/* Agent header with name and color */}
               <div
                 className="flex items-center justify-between px-2 py-1.5 border-b border-slate-800/50"
-                style={{ borderLeftWidth: 3, borderLeftColor: agent.color }}
+                style={{ borderLeftWidth: 4, borderLeftColor: agent.color }}
               >
                 <div className="flex items-center gap-2 min-w-0">
                   <span className="font-bold text-slate-100 truncate">
@@ -177,12 +177,12 @@ export function AgentStatus() {
                 </div>
 
                 {/* State badges row */}
-                <div className="flex items-center gap-2 pt-1">
+                <div className="flex items-center gap-3 pt-1">
                   {/* Backend State */}
                   <div className="flex items-center gap-1">
-                    <Activity size={10} className="text-slate-500" />
+                    <Activity size={12} className="text-slate-500" />
                     <span
-                      className={`px-1.5 py-0.5 rounded text-[9px] uppercase font-semibold border ${getBackendStateColor(agent.backendState)}`}
+                      className={`px-2 py-1 rounded text-[9px] uppercase font-semibold border ${getBackendStateColor(agent.backendState)}`}
                     >
                       {formatState(agent.backendState)}
                     </span>
@@ -190,9 +190,9 @@ export function AgentStatus() {
 
                   {/* Frontend Phase */}
                   <div className="flex items-center gap-1">
-                    <Layers size={10} className="text-slate-500" />
+                    <Layers size={12} className="text-slate-500" />
                     <span
-                      className={`px-1.5 py-0.5 rounded text-[9px] font-medium border ${getPhaseColor(agent.phase)}`}
+                      className={`px-2 py-1 rounded text-[9px] font-medium border ${getPhaseColor(agent.phase)}`}
                     >
                       {formatPhase(agent.phase)}
                     </span>

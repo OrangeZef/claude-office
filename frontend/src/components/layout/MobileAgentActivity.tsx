@@ -29,10 +29,10 @@ export function MobileAgentActivity({
   boss,
 }: MobileAgentActivityProps): React.ReactNode {
   return (
-    <div className="flex-[2] bg-slate-950 border border-slate-800 rounded-lg overflow-hidden min-h-0">
-      <div className="bg-slate-900 px-3 py-2 border-b border-slate-800 flex items-center gap-2">
-        <Users size={14} className="text-blue-500" />
-        <span className="text-slate-300 font-bold uppercase tracking-wider text-xs">
+    <div className="flex-[2] bg-[#0a0a0a] border border-yellow-400/20 rounded-lg overflow-hidden min-h-0">
+      <div className="bg-[#0a0a0a]/60 backdrop-blur-md px-3 py-2 border-b border-yellow-400/20 flex items-center gap-2">
+        <Users size={14} className="text-yellow-400" />
+        <span className="text-slate-200 font-bold uppercase tracking-wider text-xs">
           Agent Activity
         </span>
         <span className="text-slate-600 text-xs">({agents.size})</span>
@@ -40,10 +40,10 @@ export function MobileAgentActivity({
 
       <div className="overflow-y-auto h-[calc(100%-36px)] p-2">
         {/* Boss Status */}
-        <div className="mb-3 p-2 bg-slate-900/50 rounded-lg border border-amber-500/30">
+        <div className="mb-3 p-2 bg-[#0a0a0a]/60 backdrop-blur-md rounded-lg border border-yellow-400/20">
           <div className="flex items-center gap-2 mb-1">
-            <div className="w-2 h-2 rounded-full bg-amber-500" />
-            <span className="text-amber-400 font-bold text-xs">BOSS</span>
+            <div className="w-2 h-2 rounded-full bg-yellow-400" />
+            <span className="text-yellow-400 font-bold text-xs">BOSS</span>
             <span className="text-slate-500 text-[10px] font-mono ml-auto">
               {boss.backendState}
             </span>
@@ -54,7 +54,7 @@ export function MobileAgentActivity({
             </p>
           )}
           {boss.bubble.content && (
-            <p className="text-blue-400 text-[11px] mt-1 truncate italic">
+            <p className="text-yellow-400 text-[11px] mt-1 truncate italic">
               &quot;{boss.bubble.content.text}&quot;
             </p>
           )}
@@ -70,14 +70,14 @@ export function MobileAgentActivity({
             {Array.from(agents.values()).map((agent) => (
               <div
                 key={agent.id}
-                className="p-2 bg-slate-900/50 rounded-lg border border-slate-800"
+                className="p-2 bg-[#0a0a0a]/60 backdrop-blur-md rounded-lg border border-yellow-400/20"
               >
                 <div className="flex items-center gap-2 mb-1">
                   <div
                     className="w-2 h-2 rounded-full"
                     style={{ backgroundColor: agent.color }}
                   />
-                  <span className="text-slate-300 font-bold text-xs">
+                  <span className="text-slate-200 font-bold text-xs">
                     {agent.name}
                   </span>
                   <span className="text-slate-600 text-[10px] font-mono ml-auto">

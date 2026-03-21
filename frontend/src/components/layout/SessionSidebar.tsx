@@ -53,7 +53,7 @@ export function SessionSidebar({
       {/* Collapse Toggle */}
       <button
         onClick={onToggleCollapsed}
-        className="flex items-center justify-center p-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-lg text-slate-400 hover:text-white transition-colors"
+        className="flex items-center justify-center p-2 bg-[#0d0d0d] hover:bg-yellow-400/10 border border-yellow-400/20 rounded-lg text-yellow-400/60 hover:text-yellow-400 transition-colors"
         title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
       >
         {isCollapsed ? (
@@ -66,13 +66,13 @@ export function SessionSidebar({
       {!isCollapsed && (
         <>
           {/* Session Browser */}
-          <div className="bg-slate-950 border border-slate-800 rounded-lg overflow-hidden flex-shrink-0 max-h-[40%]">
-            <div className="bg-slate-900 px-3 py-2 border-b border-slate-800 flex items-center gap-2">
-              <History size={14} className="text-purple-500" />
-              <span className="text-slate-300 font-bold uppercase tracking-wider text-xs">
+          <div className="bg-[#0d0d0d]/80 backdrop-blur-sm border border-yellow-400/15 rounded-lg overflow-hidden flex-shrink-0 max-h-[40%]">
+            <div className="bg-black/40 px-3 py-2 border-b border-yellow-400/15 flex items-center gap-2">
+              <History size={14} className="text-yellow-400" />
+              <span className="font-mono text-xs uppercase tracking-widest text-yellow-400">
                 Sessions
               </span>
-              <span className="text-slate-600 text-xs">
+              <span className="text-slate-600 font-mono text-xs">
                 ({sessions.length})
               </span>
             </div>
@@ -96,10 +96,10 @@ export function SessionSidebar({
                         role="button"
                         tabIndex={0}
                         key={session.id}
-                        className={`group relative w-full px-3 py-2.5 text-left transition-colors cursor-pointer rounded-md ${
+                        className={`group relative w-full px-3 py-2.5 text-left transition-colors cursor-pointer rounded-md border-l-2 ${
                           isActive
-                            ? "bg-purple-500/20 border-l-2 border-purple-500"
-                            : "hover:bg-slate-800/50"
+                            ? "bg-yellow-400/10 border-yellow-400"
+                            : "border-yellow-400/0 hover:bg-yellow-400/5 hover:border-yellow-400/60"
                         }`}
                         onClick={() => onSessionSelect(session.id)}
                         onKeyDown={(e) => {
@@ -122,11 +122,11 @@ export function SessionSidebar({
                             />
                           )}
                           <span
-                            className={`text-xs font-bold truncate flex-1 ${
-                              isActive ? "text-purple-300" : "text-slate-300"
+                            className={`text-xs font-mono font-bold truncate flex-1 ${
+                              isActive ? "text-yellow-300" : "text-slate-300"
                             }`}
                           >
-                            {session.projectName || "Unknown Project"}
+                            {session.displayName ?? session.projectName ?? "Unknown Project"}
                           </span>
                           <button
                             type="button"
@@ -134,16 +134,16 @@ export function SessionSidebar({
                               e.stopPropagation();
                               onDeleteSession(session);
                             }}
-                            className="p-1 text-slate-500 hover:text-rose-400 hover:bg-slate-800 rounded transition-colors opacity-0 group-hover:opacity-100"
+                            className="p-1 text-slate-500 hover:text-rose-400 hover:bg-yellow-400/5 rounded transition-colors opacity-0 group-hover:opacity-100"
                             aria-label={`Delete session ${session.id}`}
                           >
                             <Trash2 size={12} />
                           </button>
                         </div>
-                        <div className="text-[10px] text-slate-500 font-mono truncate mb-1">
+                        <div className="text-[10px] text-slate-600 font-mono truncate mb-1">
                           {session.id}
                         </div>
-                        <div className="flex justify-between text-[10px] text-slate-500">
+                        <div className="flex justify-between text-[10px] text-slate-600 font-mono">
                           <span>{session.eventCount} events</span>
                           <span>
                             {formatDistanceToNow(new Date(session.updatedAt), {

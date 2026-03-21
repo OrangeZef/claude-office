@@ -27,6 +27,10 @@ interface ElevatorProps {
   headsetTexture: Texture | null;
   /** Sunglasses texture for agents */
   sunglassesTexture: Texture | null;
+  /** Anime sprite texture for agents */
+  animeTexture?: Texture | null;
+  /** Anime sprite frame array for agents (overrides animeTexture when populated) */
+  animeFrames?: Texture[];
 }
 
 /**
@@ -84,6 +88,8 @@ export function Elevator({
   doorTexture,
   headsetTexture,
   sunglassesTexture,
+  animeTexture,
+  animeFrames,
 }: ElevatorProps): ReactNode {
   const doorScale = useDoorAnimation(isOpen);
 
@@ -119,6 +125,8 @@ export function Elevator({
           bubble={agent.bubble.content}
           headsetTexture={headsetTexture}
           sunglassesTexture={sunglassesTexture}
+          animeTexture={animeTexture}
+          animeFrames={animeFrames}
           renderBubble={false}
           isTyping={agent.isTyping}
         />

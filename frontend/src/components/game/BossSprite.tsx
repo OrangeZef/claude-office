@@ -31,8 +31,10 @@ export interface BossSpriteProps {
   keyboardTexture: Texture | null;
   monitorTexture: Texture | null;
   phoneTexture: Texture | null;
-  headsetTexture: Texture | null;
+  headsetTexture?: Texture | null;
   sunglassesTexture: Texture | null;
+  animeTexture?: Texture | null;
+  animeFrames?: Texture[];
   renderBubble?: boolean; // Whether to render bubble (default true)
   isTyping?: boolean; // Whether boss is typing (animates arms)
   isAway?: boolean; // Whether boss is away from desk (hides body, shows only furniture)
@@ -45,19 +47,6 @@ export interface BossSpriteProps {
 const BOSS_WIDTH = 48; // 1.5 blocks × 32px
 const BOSS_HEIGHT = 80; // 2.5 blocks × 32px
 const STROKE_WIDTH = 4;
-
-// State colors for the boss (kept for reference, not currently used)
-const _STATE_COLORS: Record<BossState, number> = {
-  idle: 0x2d3748, // Gray
-  phone_ringing: 0xfbbf24, // Yellow
-  on_phone: 0xfbbf24, // Yellow
-  receiving: 0x06b6d4, // Cyan - receiving user input
-  working: 0xef4444, // Red - active
-  delegating: 0x8b5cf6, // Purple - spawning agents
-  waiting_permission: 0xf97316, // Orange - waiting for permission
-  reviewing: 0x3b82f6, // Blue - reviewing agent work
-  completing: 0x22c55e, // Green - finishing up
-};
 
 // ============================================================================
 // DRAWING FUNCTIONS
@@ -128,7 +117,7 @@ function Bubble({ content, yOffset }: BubbleProps): ReactNode {
     () => ({
       fontFamily:
         '"Courier New", Courier, "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", monospace',
-      fontSize: 20,
+      fontSize: 26,
       fill: "#000000",
       fontWeight: "bold",
       wordWrap: true,
@@ -199,15 +188,23 @@ function BossSpriteComponent({
   phoneTexture: _phoneTexture,
   headsetTexture,
   sunglassesTexture,
+  animeTexture,
+  animeFrames,
   renderBubble = true,
   isTyping = false,
   isAway = false,
 }: BossSpriteProps): ReactNode {
+  // Frame animation state for sprite sheet cycling
+  const [frameIndex, setFrameIndex] = useState(0);
+
   // Animation state for typing
   const [typingTime, setTypingTime] = useState(0);
 
-  // Animate typing - oscillate hands up/down
+  // Animate typing - oscillate hands up/down; also advance frame cycling
   useTick((ticker) => {
+    if (animeFrames && animeFrames.length > 1) {
+      setFrameIndex((f) => (f + ticker.deltaTime * 0.10) % animeFrames.length);
+    }
     if (isTyping) {
       setTypingTime((t) => t + ticker.deltaTime * 0.15);
     } else {
@@ -215,6 +212,11 @@ function BossSpriteComponent({
       setTypingTime(0);
     }
   });
+
+  const activeTexture =
+    animeFrames && animeFrames.length > 0
+      ? animeFrames[Math.floor(frameIndex) % animeFrames.length]
+      : animeTexture;
 
   // Calculate arm animation offsets (subtle, out of phase for natural look)
   const rightArmOffset = isTyping ? Math.sin(typingTime * 8) * 2 : 0;
@@ -272,19 +274,29 @@ function BossSpriteComponent({
       {/* Boss character (body + accessories) - hidden when away from desk */}
       {!isAway && (
         <pixiContainer y={6}>
-          {/* Boss body - in front of chair, behind desk */}
-          <pixiGraphics draw={drawBossCallback} />
-
-          {/* Sunglasses - boss always looks cool (drawn before arms) */}
-          {sunglassesTexture && (
+          {/* Boss body — anime sprite if available, else procedural capsule */}
+          {activeTexture ? (
             <pixiSprite
-              texture={sunglassesTexture}
-              anchor={0.5}
+              texture={activeTexture}
+              anchor={{ x: 0.5, y: 1 }}
               x={0}
-              y={-19}
-              scale={{ x: 0.036, y: 0.04 }}
-              tint={0x000000}
+              y={0}
+              scale={{ x: (BOSS_WIDTH * 1.8) / 192, y: (BOSS_HEIGHT * 1.8) / 320 }}
             />
+          ) : (
+            <>
+              <pixiGraphics draw={drawBossCallback} />
+              {sunglassesTexture && (
+                <pixiSprite
+                  texture={sunglassesTexture}
+                  anchor={0.5}
+                  x={0}
+                  y={-19}
+                  scale={{ x: 0.036, y: 0.04 }}
+                  tint={0x000000}
+                />
+              )}
+            </>
           )}
         </pixiContainer>
       )}
@@ -312,23 +324,12 @@ function BossSpriteComponent({
         />
       )}
 
-      {/* Arms - hidden when away from desk */}
-      {!isAway && (
+      {/* Arms - only for procedural capsule, hidden when anime sprite is active */}
+      {!isAway && !activeTexture && (
         <pixiContainer y={6}>
           <pixiGraphics draw={drawRightArmCallback} />
           <pixiGraphics draw={drawLeftArmCallback} />
         </pixiContainer>
-      )}
-
-      {/* Headset - hidden when away from desk */}
-      {!isAway && headsetTexture && (
-        <pixiSprite
-          texture={headsetTexture}
-          anchor={0.5}
-          x={0}
-          y={6 - 20}
-          scale={{ x: 0.66825, y: 0.675 }}
-        />
       )}
 
       {/* Monitor - left side of desk */}
@@ -344,7 +345,7 @@ function BossSpriteComponent({
 
       {/* Boss label - hidden when away from desk */}
       {!isAway && (
-        <pixiContainer y={-63} scale={0.5}>
+        <pixiContainer y={-155} scale={0.5}>
           <pixiText
             text="Claude"
             anchor={0.5}
@@ -389,7 +390,9 @@ export interface MobileBossProps {
   jumpOffset?: number; // Vertical offset for jump animation
   scale?: number; // Scale factor for boss body
   sunglassesTexture: Texture | null;
-  headsetTexture: Texture | null;
+  headsetTexture?: Texture | null;
+  animeTexture?: Texture | null;
+  animeFrames?: Texture[];
 }
 
 function MobileBossComponent({
@@ -398,19 +401,44 @@ function MobileBossComponent({
   scale = 1.0,
   sunglassesTexture,
   headsetTexture,
+  animeTexture,
+  animeFrames,
 }: MobileBossProps): ReactNode {
   const drawBossCallback = useMemo(
     () => (g: Graphics) => drawBossBody(g, "working"),
     [],
   );
 
+  // Frame animation state for sprite sheet cycling (slightly faster — walking)
+  const [frameIndex, setFrameIndex] = useState(0);
+  useTick((ticker) => {
+    if (animeFrames && animeFrames.length > 1) {
+      setFrameIndex((f) => (f + ticker.deltaTime * 0.14) % animeFrames.length);
+    }
+  });
+
+  const activeTexture =
+    animeFrames && animeFrames.length > 0
+      ? animeFrames[Math.floor(frameIndex) % animeFrames.length]
+      : animeTexture;
+
   return (
     <pixiContainer x={position.x} y={position.y + jumpOffset} scale={scale}>
-      {/* Boss body */}
-      <pixiGraphics draw={drawBossCallback} />
+      {/* Boss body — anime sprite if available, else colored capsule */}
+      {activeTexture ? (
+        <pixiSprite
+          texture={activeTexture}
+          anchor={{ x: 0.5, y: 1 }}
+          x={0}
+          y={0}
+          scale={{ x: (BOSS_WIDTH * 1.8) / 192, y: (BOSS_HEIGHT * 1.8) / 320 }}
+        />
+      ) : (
+        <pixiGraphics draw={drawBossCallback} />
+      )}
 
-      {/* Sunglasses */}
-      {sunglassesTexture && (
+      {/* Sunglasses (capsule fallback only) */}
+      {!activeTexture && sunglassesTexture && (
         <pixiSprite
           texture={sunglassesTexture}
           anchor={0.5}
@@ -421,8 +449,8 @@ function MobileBossComponent({
         />
       )}
 
-      {/* Headset */}
-      {headsetTexture && (
+      {/* Headset (capsule fallback only) */}
+      {!activeTexture && headsetTexture && (
         <pixiSprite
           texture={headsetTexture}
           anchor={0.5}

@@ -7,6 +7,7 @@ import {
   usePreferencesStore,
   selectAutoFollowNewSessions,
 } from "@/stores/preferencesStore";
+import { API_BASE_URL } from "@/lib/apiBase";
 
 // ============================================================================
 // TYPES
@@ -16,6 +17,7 @@ export interface Session {
   id: string;
   projectName: string | null;
   projectRoot: string | null;
+  displayName: string | null;
   createdAt: string;
   updatedAt: string;
   status: string;
@@ -32,6 +34,7 @@ interface UseSessionsResult {
   sessionId: string;
   setSessionId: (id: string) => void;
   fetchSessions: () => Promise<Session[] | null>;
+  removeSession: (id: string) => void;
   showStatus: (text: string, type?: "info" | "error" | "success") => void;
 }
 
@@ -59,7 +62,7 @@ export function useSessions(
   const fetchSessions = useCallback(async (): Promise<Session[] | null> => {
     setSessionsLoading(true);
     try {
-      const res = await fetch("http://localhost:8000/api/v1/sessions");
+      const res = await fetch(`${API_BASE_URL}/api/v1/sessions`);
       if (res.ok) {
         const data = (await res.json()) as Session[];
         setSessions(data);
@@ -71,6 +74,10 @@ export function useSessions(
       setSessionsLoading(false);
     }
     return null;
+  }, []);
+
+  const removeSession = useCallback((id: string) => {
+    setSessions((prev) => prev.filter((s) => s.id !== id));
   }, []);
 
   // Fetch sessions on mount and periodically
@@ -177,6 +184,7 @@ export function useSessions(
     sessionId,
     setSessionId,
     fetchSessions,
+    removeSession,
     showStatus,
   };
 }

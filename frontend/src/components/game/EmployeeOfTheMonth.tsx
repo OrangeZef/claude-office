@@ -111,13 +111,13 @@ export function EmployeeOfTheMonth(): ReactNode {
           x={60}
           y={87}
           anchor={0.5}
-          scale={0.082}
+          scale={0.27}
         />
       )}
       {/* Name plate text */}
       <pixiContainer x={60} y={144} scale={0.5}>
         <pixiText
-          text="PAUL R."
+          text="MEGUMIN"
           anchor={0.5}
           style={{
             fontFamily: '"Arial Black", Arial, sans-serif',

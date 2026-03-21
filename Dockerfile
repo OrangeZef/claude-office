@@ -13,7 +13,7 @@ WORKDIR /app/frontend
 COPY frontend/package.json frontend/bun.lock* ./
 
 # Install dependencies
-RUN bun install --frozen-lockfile
+RUN bun install
 
 # Copy frontend source
 COPY frontend/ ./
@@ -45,6 +45,9 @@ RUN uv sync --no-dev --frozen
 
 # Copy backend source
 COPY backend/app ./app
+
+# Copy simulation scripts
+COPY scripts ./scripts
 
 # Copy built frontend from stage 1
 COPY --from=frontend-builder /app/frontend/out ./static

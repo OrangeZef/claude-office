@@ -10,12 +10,15 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from rich.logging import RichHandler
 
+from sqlalchemy import text
+
 from app.api.routes import events, preferences, sessions
 from app.api.websocket import manager
 from app.config import get_settings
 from app.core.event_processor import event_processor
+from app.core.session_importer import import_existing_sessions
 from app.core.summary_service import get_summary_service
-from app.db.database import Base, get_engine
+from app.db.database import AsyncSessionLocal, Base, get_engine
 from app.services.git_service import git_service
 
 STATIC_DIR = Path(__file__).parent.parent / "static"
@@ -25,7 +28,27 @@ logging.basicConfig(
     level=logging.INFO, format="%(message)s", handlers=[RichHandler(rich_tracebacks=True)]
 )
 
+logger = logging.getLogger(__name__)
+
 settings = get_settings()
+
+
+async def ensure_migrations(engine) -> None:
+    """Run lightweight migration guards for columns added after initial create_all."""
+    async with engine.connect() as conn:
+        result = await conn.execute(text("PRAGMA table_info(sessions)"))
+        columns = [row[1] for row in result.fetchall()]
+        if "display_name" not in columns:
+            await conn.execute(
+                text("ALTER TABLE sessions ADD COLUMN display_name TEXT")
+            )
+            logger.info("Migration applied: added display_name column to sessions")
+        if "project_root" not in columns:
+            await conn.execute(
+                text("ALTER TABLE sessions ADD COLUMN project_root TEXT")
+            )
+            logger.info("Migration applied: added project_root column to sessions")
+        await conn.commit()
 
 
 @asynccontextmanager
@@ -35,6 +58,13 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     engine = get_engine()
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+
+    await ensure_migrations(engine)
+
+    async with AsyncSessionLocal() as db:
+        count = await import_existing_sessions(db)
+        if count > 0:
+            logger.info(f"Imported {count} existing sessions from Claude transcripts")
 
     git_service.start()
 

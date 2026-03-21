@@ -15,7 +15,6 @@ import type { AgentPhase } from "@/stores/gameStore";
 import { isInElevatorZone } from "@/systems/queuePositions";
 import { ICON_MAP } from "./shared/iconMap";
 import { drawBubble, drawIconBadge } from "./shared/drawBubble";
-import { drawRightArm, drawLeftArm } from "./shared/drawArm";
 
 // ============================================================================
 // TYPES
@@ -31,6 +30,10 @@ export interface AgentSpriteProps {
   bubble: BubbleContent | null;
   headsetTexture?: Texture | null;
   sunglassesTexture?: Texture | null;
+  animeTexture?: Texture | null;
+  animeFrames?: Texture[];
+  workerVariants?: Texture[][];
+  variantIndex?: number;
   renderBubble?: boolean; // Whether to render bubble (default true)
   renderLabel?: boolean; // Whether to render name label (default true)
   isTyping?: boolean; // Whether agent is typing (animates arms)
@@ -104,7 +107,7 @@ function Bubble({ content, yOffset }: BubbleProps): ReactNode {
     () => ({
       fontFamily:
         '"Courier New", Courier, "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", monospace',
-      fontSize: 20,
+      fontSize: 26,
       fill: "#000000",
       fontWeight: "bold",
       wordWrap: true,
@@ -172,26 +175,67 @@ function AgentSpriteComponent({
   bubble,
   headsetTexture: _headsetTexture,
   sunglassesTexture,
+  animeTexture,
+  animeFrames,
+  workerVariants,
+  variantIndex = 0,
   renderBubble = true,
   renderLabel = true,
-  isTyping: _isTyping = false,
+  isTyping = false,
 }: AgentSpriteProps): ReactNode {
-  // Memoize draw callback
+  // Memoize draw callback (fallback only)
   const drawCallback = useMemo(
     () => (g: Graphics) => drawAgent(g, color),
     [color],
   );
 
-  // Bubble offset for capsule rendering
-  const bubbleOffset = -93;
+  // Frame animation state for sprite sheet cycling
+  const [frameIndex, setFrameIndex] = useState(0);
+
+  // Animate magic sparkle — cycles through frames when typing
+  const [sparkleFrame, setSparkleFrame] = useState(0);
+
+  // Resolve which frame array to use: workerVariants takes priority over animeFrames
+  const resolvedFrames: Texture[] | undefined =
+    workerVariants && workerVariants.length > 0
+      ? workerVariants[variantIndex % workerVariants.length]
+      : animeFrames;
+
+  useTick((ticker) => {
+    if (resolvedFrames && resolvedFrames.length > 1) {
+      setFrameIndex((f) => (f + ticker.deltaTime * 0.12) % resolvedFrames.length);
+    }
+    if (isTyping) {
+      setSparkleFrame((f) => (f + ticker.deltaTime * 0.18) % 4);
+    }
+  });
+
+  const activeTexture =
+    resolvedFrames && resolvedFrames.length > 0
+      ? resolvedFrames[Math.floor(frameIndex) % resolvedFrames.length]
+      : animeTexture;
+  const sparkleEmoji = ["✨", "💫", "⚡", "💥"][Math.floor(sparkleFrame)];
+
+  // Bubble offset — shifted up so it clears the name label
+  const bubbleOffset = -113;
 
   return (
     <pixiContainer x={position.x} y={position.y}>
-      {/* Agent capsule body */}
-      <pixiGraphics draw={drawCallback} />
+      {/* Agent body — anime sprite if available, else colored capsule */}
+      {activeTexture ? (
+        <pixiSprite
+          texture={activeTexture}
+          anchor={{ x: 0.5, y: 1 }}
+          x={0}
+          y={0}
+          scale={{ x: (AGENT_WIDTH * 1.8) / 192, y: (AGENT_HEIGHT * 1.8) / 320 }}
+        />
+      ) : (
+        <pixiGraphics draw={drawCallback} />
+      )}
 
-      {/* Sunglasses */}
-      {sunglassesTexture && (
+      {/* Sunglasses (capsule fallback only) */}
+      {!activeTexture && sunglassesTexture && (
         <pixiSprite
           texture={sunglassesTexture}
           anchor={0.5}
@@ -201,9 +245,21 @@ function AgentSpriteComponent({
         />
       )}
 
+      {/* Magic sparkle when working — replaces headset for anime sprites */}
+      {activeTexture && isTyping && !isInElevatorZone(position) && (
+        <pixiContainer x={28} y={-120} scale={0.6}>
+          <pixiText
+            text={sparkleEmoji}
+            anchor={0.5}
+            style={{ fontFamily: '"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif', fontSize: 36 }}
+            resolution={2}
+          />
+        </pixiContainer>
+      )}
+
       {/* Agent name if present - hide when in elevator or when renderLabel is false */}
       {renderLabel && name && !isInElevatorZone(position) && (
-        <pixiContainer y={-70} scale={0.5}>
+        <pixiContainer y={-155} scale={0.5}>
           <pixiText
             text={name}
             anchor={0.5}
@@ -255,28 +311,37 @@ function AgentArmsComponent({ position, isTyping }: AgentArmsProps): ReactNode {
     ? Math.sin(typingTime * 8 + Math.PI * 0.7) * 2
     : 0;
 
-  // Agent arm params: body half-width 22px, shoulder at y=-16, keyboard at y=16
-  const agentArmParams = useMemo(
-    () => ({
-      bodyHalfWidth: (AGENT_WIDTH - STROKE_WIDTH) / 2,
-      startY: -16,
-      endY: 16,
-      handColor: 0x1f2937,
-    }),
-    [],
-  );
-
-  // Arm draw callbacks
+  // Orb draw callbacks — glowing floating orbs instead of stick arms
   const drawRightArmCallback = useCallback(
-    (g: Graphics) =>
-      drawRightArm(g, { ...agentArmParams, animOffset: rightArmOffset }),
-    [agentArmParams, rightArmOffset],
+    (g: Graphics) => {
+      g.clear();
+      const animOffset = rightArmOffset;
+      const cx = 22;
+      const cy = -16 + animOffset;
+      // Outer glow
+      g.circle(cx, cy, 8);
+      g.fill({ color: 0x88aaff, alpha: 0.3 });
+      // Inner orb
+      g.circle(cx, cy, 5);
+      g.fill({ color: 0x88aaff, alpha: isTyping ? 1.0 : 0.3 });
+    },
+    [rightArmOffset, isTyping],
   );
 
   const drawLeftArmCallback = useCallback(
-    (g: Graphics) =>
-      drawLeftArm(g, { ...agentArmParams, animOffset: leftArmOffset }),
-    [agentArmParams, leftArmOffset],
+    (g: Graphics) => {
+      g.clear();
+      const animOffset = leftArmOffset;
+      const cx = -22;
+      const cy = -16 + animOffset;
+      // Outer glow
+      g.circle(cx, cy, 8);
+      g.fill({ color: 0x88aaff, alpha: 0.3 });
+      // Inner orb
+      g.circle(cx, cy, 5);
+      g.fill({ color: 0x88aaff, alpha: isTyping ? 1.0 : 0.3 });
+    },
+    [leftArmOffset, isTyping],
   );
 
   return (
@@ -326,7 +391,7 @@ export interface AgentLabelProps {
 
 function AgentLabelComponent({ name, position }: AgentLabelProps): ReactNode {
   return (
-    <pixiContainer x={position.x} y={position.y - 70} scale={0.5}>
+    <pixiContainer x={position.x} y={position.y - 110} scale={0.5}>
       <pixiText
         text={name}
         anchor={0.5}

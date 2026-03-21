@@ -19,7 +19,7 @@ import {
   Sprite,
   Application as PixiApplication,
 } from "pixi.js";
-import { useMemo, useEffect, useRef, type ReactNode } from "react";
+import { useMemo, useEffect, useRef, useState, type ReactNode } from "react";
 import {
   TransformWrapper,
   TransformComponent,
@@ -42,6 +42,7 @@ import {
   selectContextUtilization,
   selectIsCompacting,
   selectPrintReport,
+  selectIsConnected,
 } from "@/stores/gameStore";
 import { useAnimationSystem } from "@/systems/animationSystem";
 import { useCompactionAnimation } from "@/systems/compactionAnimation";
@@ -68,7 +69,6 @@ import {
 import {
   AgentSprite,
   AgentArms,
-  AgentHeadset,
   AgentLabel,
   Bubble as AgentBubble,
 } from "./AgentSprite";
@@ -91,6 +91,14 @@ import {
 import { ZoomControls } from "./ZoomControls";
 import { LoadingScreen } from "./LoadingScreen";
 import { OfficeBackground } from "./OfficeBackground";
+import { IdleWorker } from "./IdleWorker";
+import { JokaSign } from "./JokaSign";
+import { CatSprite } from "./CatSprite";
+import { CatFurniture, CatBed, CatTree } from "./CatFurniture";
+import { CatFoodArea } from "./CatFoodArea";
+import { CoffeeTable } from "./CoffeeTable";
+import { ServerRack } from "./ServerRack";
+import { WarningLight } from "./WarningLight";
 
 // Register PixiJS components
 extend({ Container, Text, Graphics, Sprite });
@@ -146,6 +154,7 @@ export function OfficeGame(): ReactNode {
   const contextUtilization = useGameStore(selectContextUtilization);
   const isCompacting = useGameStore(selectIsCompacting);
   const printReport = useGameStore(selectPrintReport);
+  const isConnected = useGameStore(selectIsConnected);
 
   // Compaction animation state
   const compactionAnimation = useCompactionAnimation();
@@ -176,6 +185,9 @@ export function OfficeGame(): ReactNode {
     return tasks;
   }, [agents]);
 
+  // Shared idle desk tracking (prevents two IdleWorkers picking the same desk)
+  const [idleOccupiedDesks, setIdleOccupiedDesks] = useState<Set<number>>(new Set());
+
   // Desk count
   const deskCount = useMemo(() => {
     return Math.max(8, Math.ceil(agents.size / 4) * 4);
@@ -183,6 +195,12 @@ export function OfficeGame(): ReactNode {
 
   // Desk positions for Y-sorted rendering
   const deskPositions = useDeskPositions(deskCount, occupiedDesks);
+
+  // Stable Set passed to all 3 IdleWorker instances — avoids new Set() on every render
+  const idleWorkerOccupiedDesks = useMemo(
+    () => new Set([...occupiedDesks, ...idleOccupiedDesks]),
+    [occupiedDesks, idleOccupiedDesks],
+  );
 
   // Keyboard shortcuts for debug
   useEffect(() => {
@@ -230,8 +248,8 @@ export function OfficeGame(): ReactNode {
     >
       <TransformWrapper
         ref={transformRef}
-        initialScale={1}
-        minScale={1}
+        initialScale={0.6}
+        minScale={0.3}
         maxScale={3}
         wheel={{ step: 0.1 }}
         pinch={{ step: 5 }}
@@ -360,6 +378,12 @@ export function OfficeGame(): ReactNode {
                     />
                   )}
 
+                  {/* JokaSign - above elevator, near top-left wall area */}
+                  <JokaSign
+                    x={10}
+                    y={10}
+                  />
+
                   {/* Elevator with animated doors and agents inside */}
                   <Elevator
                     isOpen={isElevatorOpen}
@@ -404,7 +428,7 @@ export function OfficeGame(): ReactNode {
                             agent.currentPosition.y,
                           ),
                       )
-                      .map((agent) => (
+                      .map((agent, agentIndex) => (
                         <pixiContainer
                           key={agent.id}
                           zIndex={agent.currentPosition.y}
@@ -422,6 +446,8 @@ export function OfficeGame(): ReactNode {
                             renderBubble={false}
                             renderLabel={false}
                             isTyping={agent.isTyping}
+                            workerVariants={textures.workerVariants}
+                            variantIndex={agentIndex}
                           />
                         </pixiContainer>
                       ))}
@@ -445,18 +471,6 @@ export function OfficeGame(): ReactNode {
                         isTyping={agent.isTyping}
                       />
                     ))}
-
-                  {/* Agent headsets - rendered after arms so they appear on top */}
-                  {textures.headset &&
-                    Array.from(agents.values())
-                      .filter((agent) => agent.phase === "idle")
-                      .map((agent) => (
-                        <AgentHeadset
-                          key={`headset-${agent.id}`}
-                          position={agent.currentPosition}
-                          headsetTexture={textures.headset!}
-                        />
-                      ))}
 
                   {/* Monitors and decorations (in front of agent arms) */}
                   <DeskSurfacesTop
@@ -486,11 +500,11 @@ export function OfficeGame(): ReactNode {
                     keyboardTexture={textures.keyboard}
                     monitorTexture={textures.monitor}
                     phoneTexture={textures.phone}
-                    headsetTexture={textures.headset}
                     sunglassesTexture={textures.sunglasses}
                     renderBubble={false}
                     isTyping={boss.isTyping}
                     isAway={compactionAnimation.phase !== "idle"}
+                    animeFrames={textures.animeBossFrames}
                   />
 
                   {/* Mobile Boss (when walking to/from trash can) */}
@@ -500,7 +514,7 @@ export function OfficeGame(): ReactNode {
                       jumpOffset={compactionAnimation.jumpOffset}
                       scale={compactionAnimation.bossScale}
                       sunglassesTexture={textures.sunglasses}
-                      headsetTexture={textures.headset}
+                      animeFrames={textures.animeBossFrames}
                     />
                   )}
 
@@ -515,6 +529,57 @@ export function OfficeGame(): ReactNode {
                     }
                     isCompacting={isCompacting}
                     isStomping={compactionAnimation.isStomping}
+                  />
+
+                  {/* Cats - two wandering cats */}
+                  <CatSprite color={0x111111} accentColor={0xff8888} startX={200} startY={500} />
+                  <CatSprite color={0xf0ede0} accentColor={0xffccaa} startX={900} startY={700} />
+
+                  {/* Cat furniture - bed right side, tree left side (positions hardcoded internally) */}
+                  <CatFurniture />
+
+                  {/* Additional cat furniture */}
+                  <CatBed x={400} y={880} />
+                  <CatTree x={950} y={280} />
+
+                  {/* Cat food area */}
+                  <CatFoodArea x={1140} y={275} />
+
+                  {/* Coffee table - under coffee machine */}
+                  <CoffeeTable x={1054} y={210} />
+
+                  {/* Server rack cluster - bottom right corner, horizontal row */}
+                  <ServerRack x={1070} y={910} />
+                  <ServerRack x={1135} y={910} />
+                  <ServerRack x={1200} y={910} />
+
+                  {/* Warning light - top right area, flashes on agent errors */}
+                  <WarningLight x={1240} y={80} active={!isConnected} />
+
+                  {/* Idle/ambient workers */}
+                  <IdleWorker
+                    workerVariants={textures.workerVariants}
+                    occupiedDeskNums={idleWorkerOccupiedDesks}
+                    agentOccupiedDeskNums={occupiedDesks}
+                    instanceIndex={0}
+                    onClaimDesk={(n) => setIdleOccupiedDesks((prev) => new Set([...prev, n]))}
+                    onReleaseDesk={(n) => setIdleOccupiedDesks((prev) => { const s = new Set(prev); s.delete(n); return s; })}
+                  />
+                  <IdleWorker
+                    workerVariants={textures.workerVariants}
+                    occupiedDeskNums={idleWorkerOccupiedDesks}
+                    agentOccupiedDeskNums={occupiedDesks}
+                    instanceIndex={1}
+                    onClaimDesk={(n) => setIdleOccupiedDesks((prev) => new Set([...prev, n]))}
+                    onReleaseDesk={(n) => setIdleOccupiedDesks((prev) => { const s = new Set(prev); s.delete(n); return s; })}
+                  />
+                  <IdleWorker
+                    workerVariants={textures.workerVariants}
+                    occupiedDeskNums={idleWorkerOccupiedDesks}
+                    agentOccupiedDeskNums={occupiedDesks}
+                    instanceIndex={2}
+                    onClaimDesk={(n) => setIdleOccupiedDesks((prev) => new Set([...prev, n]))}
+                    onReleaseDesk={(n) => setIdleOccupiedDesks((prev) => { const s = new Set(prev); s.delete(n); return s; })}
                   />
 
                   {/* Debug overlays */}

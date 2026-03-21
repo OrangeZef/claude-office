@@ -34,6 +34,7 @@ import Modal from "@/components/overlay/Modal";
 import SettingsModal from "@/components/overlay/SettingsModal";
 import { usePreferencesStore } from "@/stores/preferencesStore";
 import type { Session } from "@/hooks/useSessions";
+import { API_BASE_URL } from "@/lib/apiBase";
 
 // ============================================================================
 // DYNAMIC IMPORT
@@ -93,7 +94,7 @@ export default function V2TestPage(): React.ReactNode {
   // ------------------------------------------------------------------
   // Session management hooks
   // ------------------------------------------------------------------
-  const { sessions, sessionsLoading, sessionId, setSessionId, fetchSessions } =
+  const { sessions, sessionsLoading, sessionId, setSessionId, fetchSessions, removeSession } =
     useSessions(showStatus);
 
   const {
@@ -102,7 +103,7 @@ export default function V2TestPage(): React.ReactNode {
     handleClearDB,
     handleSimulate,
     handleReset,
-  } = useSessionSwitch({ sessionId, setSessionId, fetchSessions, showStatus });
+  } = useSessionSwitch({ sessionId, setSessionId, fetchSessions, removeSession, showStatus });
 
   // ------------------------------------------------------------------
   // Store subscriptions
@@ -125,7 +126,7 @@ export default function V2TestPage(): React.ReactNode {
   // One-time initialization effects
   // ------------------------------------------------------------------
   useEffect(() => {
-    fetch("http://localhost:8000/api/v1/status")
+    fetch(`${API_BASE_URL}/api/v1/status`)
       .then((res) => res.json())
       .then((data: { aiSummaryEnabled: boolean }) =>
         setAiSummaryEnabled(data.aiSummaryEnabled),
@@ -304,13 +305,8 @@ export default function V2TestPage(): React.ReactNode {
               isMobile ? "text-lg" : "text-2xl"
             }`}
           >
-            <span className="text-orange-500">Claude</span>{" "}
-            {!isMobile && "Office Visualizer"}
-            {!isMobile && (
-              <span className="text-xs font-mono font-normal px-2 py-0.5 bg-slate-800 rounded text-slate-400 border border-slate-700">
-                v0.10.0
-              </span>
-            )}
+            {"Coffice"}{" "}
+            {!isMobile && <span className="text-yellow-400 text-sm font-normal opacity-70">by Joka.ca</span>}
           </h1>
         </div>
 

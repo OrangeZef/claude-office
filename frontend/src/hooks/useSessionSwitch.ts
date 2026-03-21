@@ -3,6 +3,7 @@
 import { agentMachineService } from "@/machines/agentMachineService";
 import { useGameStore } from "@/stores/gameStore";
 import type { Session } from "@/hooks/useSessions";
+import { API_BASE_URL } from "@/lib/apiBase";
 
 // ============================================================================
 // TYPES
@@ -12,6 +13,7 @@ interface UseSessionSwitchOptions {
   sessionId: string;
   setSessionId: (id: string) => void;
   fetchSessions: () => Promise<Session[] | null>;
+  removeSession: (id: string) => void;
   showStatus: (text: string, type?: "info" | "error" | "success") => void;
 }
 
@@ -36,6 +38,7 @@ export function useSessionSwitch({
   sessionId,
   setSessionId,
   fetchSessions,
+  removeSession,
   showStatus,
 }: UseSessionSwitchOptions): UseSessionSwitchResult {
   const handleSessionSelect = async (id: string): Promise<void> => {
@@ -56,10 +59,11 @@ export function useSessionSwitch({
 
     try {
       showStatus(`Deleting session ${id.slice(0, 8)}...`, "info");
-      const res = await fetch(`http://localhost:8000/api/v1/sessions/${id}`, {
+      const res = await fetch(`${API_BASE_URL}/api/v1/sessions/${id}`, {
         method: "DELETE",
       });
       if (res.ok) {
+        removeSession(id);
         // If deleting current session, reset UI
         if (id === sessionId) {
           agentMachineService.reset();
@@ -80,7 +84,7 @@ export function useSessionSwitch({
   const handleClearDB = async (): Promise<void> => {
     try {
       showStatus("Clearing database...", "info");
-      const res = await fetch("http://localhost:8000/api/v1/sessions", {
+      const res = await fetch(`${API_BASE_URL}/api/v1/sessions`, {
         method: "DELETE",
       });
       if (res.ok) {
@@ -102,7 +106,7 @@ export function useSessionSwitch({
     try {
       showStatus("Triggering simulation...", "info");
       const res = await fetch(
-        "http://localhost:8000/api/v1/sessions/simulate",
+        `${API_BASE_URL}/api/v1/sessions/simulate`,
         { method: "POST" },
       );
       if (res.ok) {

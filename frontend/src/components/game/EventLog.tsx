@@ -69,16 +69,14 @@ export function EventLog() {
 
         <div className="flex-grow overflow-y-auto p-2 space-y-1">
           {eventLog.length === 0 ? (
-            <div className="text-slate-600 italic p-4 text-center">
-              Waiting for events...
-            </div>
+            <div className="text-slate-600 italic text-center p-4 font-mono text-xs">🎙️ Listening for events...</div>
           ) : (
             eventLog.map((event, index) => (
               <div
                 key={`${event.id}-${index}`}
                 role="button"
                 tabIndex={0}
-                className="hover:bg-white/5 px-2 py-1.5 rounded transition-colors group border-l-2 border-slate-700 cursor-pointer hover:border-slate-500"
+                className="hover:bg-slate-800/40 px-2 py-1.5 rounded transition-all group border-l-2 border-slate-700 cursor-pointer hover:border-slate-500"
                 onClick={() => setSelectedEvent(event)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
@@ -93,9 +91,9 @@ export function EventLog() {
                     {format(event.timestamp, "HH:mm:ss")}
                   </span>
                   <span
-                    className={`flex-shrink-0 font-bold text-[10px] ${getEventTypeColor(event.type)}`}
+                    className={`flex-shrink-0 font-bold text-[9px] uppercase tracking-wide px-2 py-0.5 rounded bg-slate-800/30 ${getEventTypeColor(event.type)}`}
                   >
-                    [{event.type.replace(/_/g, " ").toUpperCase()}]
+                    {event.type.replace(/_/g, " ").toUpperCase()}
                   </span>
                   {event.agentId && (
                     <span className="text-blue-400 text-[10px]">
@@ -103,7 +101,7 @@ export function EventLog() {
                     </span>
                   )}
                   {hasNonEmptyDetail(event) && (
-                    <span className="ml-auto text-slate-600 group-hover:text-slate-400 transition-colors text-[10px]">
+                    <span className="ml-auto text-slate-600 group-hover:text-[#eab308] transition-all text-[10px]">
                       ›
                     </span>
                   )}

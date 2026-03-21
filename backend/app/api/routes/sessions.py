@@ -48,6 +48,7 @@ class SessionSummary(TypedDict):
     id: str
     projectName: str | None
     projectRoot: str | None
+    displayName: str | None
     createdAt: str
     updatedAt: str
     status: str
@@ -102,6 +103,7 @@ async def list_sessions(db: Annotated[AsyncSession, Depends(get_db)]) -> list[Se
                     "id": rec.id,
                     "projectName": rec.project_name,
                     "projectRoot": rec.project_root,
+                    "displayName": rec.display_name,
                     "createdAt": created_utc.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
                     "updatedAt": updated_utc.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
                     "status": rec.status,

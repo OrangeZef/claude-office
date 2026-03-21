@@ -28,13 +28,13 @@ export function StatusToast({ message }: StatusToastProps): React.ReactNode {
 
   return (
     <div
-      className={`px-4 py-1.5 rounded-full border shadow-lg flex items-center gap-3 text-[11px] font-bold tracking-wide uppercase whitespace-nowrap animate-in slide-in-from-top-2 duration-300
+      className={`fixed top-16 left-1/2 -translate-x-1/2 z-40 pointer-events-none px-5 py-2 rounded-full border shadow-lg flex items-center gap-3 text-[11px] font-mono font-bold tracking-widest uppercase whitespace-nowrap animate-in slide-in-from-top-2 duration-300 backdrop-blur-md
         ${
           message.type === "success"
-            ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+            ? "bg-black/90 border-green-400/50 text-green-400 shadow-green-400/20"
             : message.type === "error"
-              ? "bg-rose-500/10 border-rose-500/20 text-rose-400"
-              : "bg-blue-500/10 border-blue-500/20 text-blue-400"
+              ? "bg-black/90 border-red-500/50 text-red-400 shadow-red-500/20"
+              : "bg-black/90 border-yellow-400/40 text-yellow-400 shadow-yellow-400/15"
         }`}
     >
       <Activity

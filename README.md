@@ -59,7 +59,7 @@ Everything updates in real-time via WebSocket. No polling, no refresh.
 ### Docker (Recommended)
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/OrangeZef/claude-office.git
 cd claude-office
 cp .env.example .env  # Edit with your paths
 docker compose up -d --build

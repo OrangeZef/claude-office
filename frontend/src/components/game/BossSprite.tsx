@@ -7,10 +7,11 @@
 
 "use client";
 
-import { memo, useMemo, useState, useCallback, type ReactNode } from "react";
+import { memo, useMemo, useState, useCallback, useRef, type ReactNode } from "react";
 import { useTick } from "@pixi/react";
 import { Graphics, TextStyle, Texture } from "pixi.js";
 import type { BossState, BubbleContent, Position } from "@/types";
+import { usePreferencesStore } from "@/stores/preferencesStore";
 import { MarqueeText } from "./MarqueeText";
 import { ICON_MAP } from "./shared/iconMap";
 import { drawBubble, drawIconBadge } from "./shared/drawBubble";
@@ -200,18 +201,51 @@ function BossSpriteComponent({
   // Animation state for typing
   const [typingTime, setTypingTime] = useState(0);
 
+  // Pulsing indicator for waiting_permission state
+  const [permissionPulse, setPermissionPulse] = useState(0);
+
+  // Animation speed from preferences
+  const animationSpeed = usePreferencesStore((s) => s.animationSpeed);
+  const speedMultiplier = animationSpeed === "slow" ? 0.5 : animationSpeed === "fast" ? 2.0 : 1.0;
+
+  // Stable refs for tick callback dependencies
+  const animeFramesRef = useRef(animeFrames);
+  animeFramesRef.current = animeFrames;
+  const isTypingRef = useRef(isTyping);
+  isTypingRef.current = isTyping;
+  const stateRef = useRef(state);
+  stateRef.current = state;
+  const speedMultiplierRef = useRef(speedMultiplier);
+  speedMultiplierRef.current = speedMultiplier;
+
   // Animate typing - oscillate hands up/down; also advance frame cycling
-  useTick((ticker) => {
-    if (animeFrames && animeFrames.length > 1) {
-      setFrameIndex((f) => (f + ticker.deltaTime * 0.10) % animeFrames.length);
+  const tickCallback = useCallback((ticker: { deltaTime: number }) => {
+    const frames = animeFramesRef.current;
+    const typing = isTypingRef.current;
+    const bossState = stateRef.current;
+    const speed = speedMultiplierRef.current;
+
+    const hasFrameAnim = frames && frames.length > 1;
+    const hasPermission = bossState === "waiting_permission";
+
+    // Always need to run if typing to handle reset-to-0 case
+    if (!hasFrameAnim && !typing && !hasPermission) return;
+
+    if (hasFrameAnim) {
+      setFrameIndex((f) => (f + ticker.deltaTime * 0.10 * speed) % frames.length);
     }
-    if (isTyping) {
-      setTypingTime((t) => t + ticker.deltaTime * 0.15);
+    if (typing) {
+      setTypingTime((t) => t + ticker.deltaTime * 0.15 * speed);
     } else {
       // Reset to 0 when not typing
       setTypingTime(0);
     }
-  });
+    if (hasPermission) {
+      setPermissionPulse((p) => p + ticker.deltaTime * 0.08 * speed);
+    }
+  }, []);
+
+  useTick(tickCallback);
 
   const activeTexture =
     animeFrames && animeFrames.length > 0
@@ -273,7 +307,14 @@ function BossSpriteComponent({
 
       {/* Boss character (body + accessories) - hidden when away from desk */}
       {!isAway && (
-        <pixiContainer y={6}>
+        <pixiContainer y={50}>
+          {/* Drop shadow */}
+          <pixiGraphics draw={(g: Graphics) => {
+            g.clear();
+            g.ellipse(0, 0, 20, 6);
+            g.fill({ color: 0x000000, alpha: 0.25 });
+          }} />
+
           {/* Boss body — anime sprite if available, else procedural capsule */}
           {activeTexture ? (
             <pixiSprite
@@ -281,7 +322,7 @@ function BossSpriteComponent({
               anchor={{ x: 0.5, y: 1 }}
               x={0}
               y={0}
-              scale={{ x: (BOSS_WIDTH * 1.8) / 192, y: (BOSS_HEIGHT * 1.8) / 320 }}
+              scale={{ x: (BOSS_WIDTH * 2.1) / 384, y: (BOSS_HEIGHT * 2.1) / 640 }}
             />
           ) : (
             <>
@@ -326,7 +367,7 @@ function BossSpriteComponent({
 
       {/* Arms - only for procedural capsule, hidden when anime sprite is active */}
       {!isAway && !activeTexture && (
-        <pixiContainer y={6}>
+        <pixiContainer y={50}>
           <pixiGraphics draw={drawRightArmCallback} />
           <pixiGraphics draw={drawLeftArmCallback} />
         </pixiContainer>
@@ -345,9 +386,9 @@ function BossSpriteComponent({
 
       {/* Boss label - hidden when away from desk */}
       {!isAway && (
-        <pixiContainer y={-155} scale={0.5}>
+        <pixiContainer y={-125} scale={0.5}>
           <pixiText
-            text="Claude"
+            text="Joka"
             anchor={0.5}
             style={{
               fontFamily: "monospace",
@@ -366,6 +407,27 @@ function BossSpriteComponent({
         <pixiContainer x={0} y={70}>
           <MarqueeText text={currentTask} width={115} color="#00ff88" />
         </pixiContainer>
+      )}
+
+      {/* Waiting permission indicator - pulsing gold exclamation mark */}
+      {state === "waiting_permission" && !isAway && (
+        <pixiGraphics
+          x={0}
+          y={-100}
+          alpha={0.3 + Math.abs(Math.sin(permissionPulse)) * 0.7}
+          draw={(g: Graphics) => {
+            g.clear();
+            // Gold circle background
+            g.circle(0, 0, 10);
+            g.fill({ color: 0xeab308, alpha: 0.3 });
+            // Exclamation mark stem
+            g.roundRect(-2, -7, 4, 9, 1);
+            g.fill(0xeab308);
+            // Exclamation mark dot
+            g.circle(0, 6, 2);
+            g.fill(0xeab308);
+          }}
+        />
       )}
 
       {/* Bubble - only render if renderBubble is true and boss is at desk */}
@@ -411,9 +473,11 @@ function MobileBossComponent({
 
   // Frame animation state for sprite sheet cycling (slightly faster — walking)
   const [frameIndex, setFrameIndex] = useState(0);
+  const mobileAnimationSpeed = usePreferencesStore((s) => s.animationSpeed);
+  const mobileSpeedMultiplier = mobileAnimationSpeed === "slow" ? 0.5 : mobileAnimationSpeed === "fast" ? 2.0 : 1.0;
   useTick((ticker) => {
     if (animeFrames && animeFrames.length > 1) {
-      setFrameIndex((f) => (f + ticker.deltaTime * 0.14) % animeFrames.length);
+      setFrameIndex((f) => (f + ticker.deltaTime * 0.14 * mobileSpeedMultiplier) % animeFrames.length);
     }
   });
 
@@ -431,7 +495,7 @@ function MobileBossComponent({
           anchor={{ x: 0.5, y: 1 }}
           x={0}
           y={0}
-          scale={{ x: (BOSS_WIDTH * 1.8) / 192, y: (BOSS_HEIGHT * 1.8) / 320 }}
+          scale={{ x: (BOSS_WIDTH * 2.1) / 384, y: (BOSS_HEIGHT * 2.1) / 640 }}
         />
       ) : (
         <pixiGraphics draw={drawBossCallback} />
@@ -463,7 +527,7 @@ function MobileBossComponent({
       {/* Boss label */}
       <pixiContainer y={-63} scale={0.5}>
         <pixiText
-          text="Claude"
+          text="Joka"
           anchor={0.5}
           style={{
             fontFamily: "monospace",

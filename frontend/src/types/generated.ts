@@ -225,6 +225,8 @@ export type Category = string;
 export type Headline = string;
 export type Timestamp4 = string;
 export type Newsitems = NewsItem[];
+export type Totalinputtokens = number;
+export type Totaloutputtokens = number;
 export type Coffeecups = number;
 export type Backgroundtasks = BackgroundTask[];
 export type Conversation = ConversationEntry[];
@@ -555,6 +557,8 @@ export interface WhiteboardData {
   lastIncidentTime?: Lastincidenttime;
   agentLifespans?: Agentlifespans;
   newsItems?: Newsitems;
+  totalInputTokens?: Totalinputtokens;
+  totalOutputTokens?: Totaloutputtokens;
   coffeeCups?: Coffeecups;
   fileEdits?: Fileedits;
   backgroundTasks?: Backgroundtasks;
@@ -608,4 +612,20 @@ export interface Session {
   event_count: EventCount;
   agent_count: AgentCount;
   [k: string]: unknown;
+}
+
+/**
+ * Docker container info from the /docker/status endpoint.
+ */
+export interface ContainerInfo {
+  name: string;
+  status: string;
+  state: string;
+}
+
+/**
+ * Response from the /docker/status endpoint.
+ */
+export interface DockerStatusResponse {
+  containers: ContainerInfo[];
 }

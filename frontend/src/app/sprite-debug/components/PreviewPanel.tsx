@@ -228,7 +228,7 @@ export function PreviewPanel() {
         <div className="mt-4 flex items-center gap-4">
           <button
             onClick={() => setIsPlaying(!isPlaying)}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded"
+            className="px-4 py-2 bg-yellow-400 text-black hover:bg-yellow-500 rounded"
           >
             {isPlaying ? "⏸ Pause" : "▶ Play"}
           </button>

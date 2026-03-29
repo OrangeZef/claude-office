@@ -7,7 +7,7 @@ authors = [
     { name = "Paul Robello", email = "probello@gmail.com" },
 ]
 maintainers = [
-    { name = "Paul Robello", email = "probello@gmail.com" },
+    { name = "Julius Koka" },
 ]
 classifiers = [
     "License :: OSI Approved :: MIT License",

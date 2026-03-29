@@ -52,7 +52,8 @@ export function HeaderControls({
       <button
         title="Simulate"
         onClick={onSimulate}
-        className="flex items-center gap-1.5 px-2 py-1.5 lg:px-3 bg-yellow-400 hover:bg-yellow-500 text-black border border-yellow-400 rounded text-xs font-mono font-bold uppercase tracking-wide transition-all focus-visible:ring-2 focus-visible:ring-yellow-400 focus-visible:outline-none"
+        className="flex items-center gap-1.5 px-2 py-1.5 lg:px-3 bg-yellow-400 hover:bg-yellow-500 text-black border border-yellow-400 rounded text-xs font-mono font-bold uppercase tracking-wide transition-all active:translate-y-[1px] focus-visible:ring-2 focus-visible:ring-yellow-400 focus-visible:outline-none"
+        style={{ boxShadow: "0 4px 0 #b45309, 0 6px 12px rgba(234,179,8,0.4)", textShadow: "0 1px 0 rgba(0,0,0,0.2)" }}
       >
         <Play size={14} fill="currentColor" />
         <span className="hidden lg:inline">SIMULATE</span>
@@ -61,7 +62,8 @@ export function HeaderControls({
       <button
         title="Reset"
         onClick={onReset}
-        className="flex items-center gap-1.5 px-2 py-1.5 lg:px-3 bg-[#0d0d0d] hover:bg-yellow-400 text-yellow-400 hover:text-black border border-yellow-400/30 hover:border-yellow-400 rounded text-xs font-mono font-bold uppercase tracking-wide transition-all focus-visible:ring-2 focus-visible:ring-yellow-400 focus-visible:outline-none"
+        className="flex items-center gap-1.5 px-2 py-1.5 lg:px-3 bg-[#0d0d0d] hover:bg-yellow-400 text-yellow-400 hover:text-black border border-yellow-400/30 hover:border-yellow-400 rounded text-xs font-mono font-bold uppercase tracking-wide transition-all active:translate-y-[1px] focus-visible:ring-2 focus-visible:ring-yellow-400 focus-visible:outline-none"
+        style={{ boxShadow: "0 3px 0 #171717, 0 4px 8px rgba(0,0,0,0.5)" }}
       >
         <RefreshCw size={14} />
         <span className="hidden lg:inline">RESET</span>
@@ -70,7 +72,8 @@ export function HeaderControls({
       <button
         title="Clear DB"
         onClick={onClearDB}
-        className="flex items-center gap-1.5 px-2 py-1.5 lg:px-3 bg-[#0d0d0d] hover:bg-red-500 text-red-400 hover:text-white border border-red-500/30 hover:border-red-500 rounded text-xs font-mono font-bold uppercase tracking-wide transition-all focus-visible:ring-2 focus-visible:ring-yellow-400 focus-visible:outline-none"
+        className="flex items-center gap-1.5 px-2 py-1.5 lg:px-3 bg-[#0d0d0d] hover:bg-red-500 text-red-400 hover:text-white border border-red-500/30 hover:border-red-500 rounded text-xs font-mono font-bold uppercase tracking-wide transition-all active:translate-y-[1px] focus-visible:ring-2 focus-visible:ring-yellow-400 focus-visible:outline-none"
+        style={{ boxShadow: "0 3px 0 #171717, 0 4px 8px rgba(0,0,0,0.5)" }}
       >
         <Trash2 size={14} />
         <span className="hidden lg:inline">CLEAR DB</span>
@@ -79,11 +82,12 @@ export function HeaderControls({
       <button
         title={`Debug ${debugMode ? "ON" : "OFF"}`}
         onClick={onToggleDebug}
-        className={`flex items-center gap-1.5 px-2 py-1.5 lg:px-3 border rounded text-xs font-mono font-bold uppercase tracking-wide transition-all ${
+        className={`flex items-center gap-1.5 px-2 py-1.5 lg:px-3 border rounded text-xs font-mono font-bold uppercase tracking-wide transition-all active:translate-y-[1px] ${
           debugMode
             ? "bg-yellow-400/20 text-yellow-300 border-yellow-400"
-            : "bg-[#0d0d0d] text-slate-400 border-slate-500/30 hover:bg-yellow-400/10 hover:text-yellow-400 hover:border-yellow-400/30"
+            : "bg-[#0d0d0d] text-slate-400 border-neutral-500/30 hover:bg-yellow-400/10 hover:text-yellow-400 hover:border-yellow-400/30"
         } focus-visible:ring-2 focus-visible:ring-yellow-400 focus-visible:outline-none`}
+        style={{ boxShadow: "0 3px 0 #171717, 0 4px 8px rgba(0,0,0,0.5)" }}
       >
         <Bug size={14} />
         <span className="hidden lg:inline">DEBUG {debugMode ? "ON" : "OFF"}</span>
@@ -92,7 +96,8 @@ export function HeaderControls({
       <button
         title="Settings"
         onClick={onOpenSettings}
-        className="flex items-center gap-1.5 px-2 py-1.5 lg:px-3 bg-[#0d0d0d] hover:bg-yellow-400 text-yellow-400 hover:text-black border border-yellow-400/30 hover:border-yellow-400 rounded text-xs font-mono font-bold uppercase tracking-wide transition-all focus-visible:ring-2 focus-visible:ring-yellow-400 focus-visible:outline-none"
+        className="flex items-center gap-1.5 px-2 py-1.5 lg:px-3 bg-[#0d0d0d] hover:bg-yellow-400 text-yellow-400 hover:text-black border border-yellow-400/30 hover:border-yellow-400 rounded text-xs font-mono font-bold uppercase tracking-wide transition-all active:translate-y-[1px] focus-visible:ring-2 focus-visible:ring-yellow-400 focus-visible:outline-none"
+        style={{ boxShadow: "0 3px 0 #171717, 0 4px 8px rgba(0,0,0,0.5)" }}
       >
         <Settings size={14} />
         <span className="hidden lg:inline">SETTINGS</span>
@@ -101,7 +106,8 @@ export function HeaderControls({
       <button
         title="Help"
         onClick={onOpenHelp}
-        className="flex items-center gap-1.5 px-2 py-1.5 lg:px-3 bg-[#0d0d0d] hover:bg-yellow-400 text-yellow-400 hover:text-black border border-yellow-400/30 hover:border-yellow-400 rounded text-xs font-mono font-bold uppercase tracking-wide transition-all focus-visible:ring-2 focus-visible:ring-yellow-400 focus-visible:outline-none"
+        className="flex items-center gap-1.5 px-2 py-1.5 lg:px-3 bg-[#0d0d0d] hover:bg-yellow-400 text-yellow-400 hover:text-black border border-yellow-400/30 hover:border-yellow-400 rounded text-xs font-mono font-bold uppercase tracking-wide transition-all active:translate-y-[1px] focus-visible:ring-2 focus-visible:ring-yellow-400 focus-visible:outline-none"
+        style={{ boxShadow: "0 3px 0 #171717, 0 4px 8px rgba(0,0,0,0.5)" }}
       >
         <HelpCircle size={14} />
         <span className="hidden lg:inline">HELP</span>
@@ -121,7 +127,7 @@ export function HeaderControls({
             <span
               className={`inline-block w-2 h-2 rounded-full flex-shrink-0 ${
                 isConnected
-                  ? "bg-green-400 shadow-[0_0_8px_rgba(0,255,0,0.6)]"
+                  ? "bg-green-400 shadow-[0_0_8px_rgba(34,197,94,0.6)]"
                   : "bg-red-500"
               }`}
             />

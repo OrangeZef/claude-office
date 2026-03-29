@@ -3,8 +3,9 @@
 /**
  * OrgChartMode - Mode 3: Organizational hierarchy chart.
  *
- * Shows the boss at the top with lines down to up to 4 agents.
- * Each agent card displays their name, color-coded border, and a silly job title.
+ * Shows the boss at the top with lines down to up to 6 agents.
+ * Each agent card displays their name, color-coded border, and current task
+ * (falling back to a silly job title when no task is active).
  */
 
 import { Graphics } from "pixi.js";
@@ -31,6 +32,10 @@ export function OrgChartMode({
   agents,
   bossTask,
 }: OrgChartModeProps): ReactNode {
+  const displayAgents = agents.slice(0, 6);
+  const agentCount = displayAgents.length;
+  const boxWidth = 55;
+
   const drawOrgChart = useCallback(
     (g: Graphics) => {
       g.clear();
@@ -41,9 +46,7 @@ export function OrgChartMode({
       g.stroke({ width: 2, color: 0xf59e0b });
 
       // Lines to agents
-      if (agents.length > 0) {
-        const agentCount = Math.min(agents.length, 4);
-        const boxWidth = 75;
+      if (agentCount > 0) {
         const totalWidth = boxWidth * agentCount;
         const startX = (330 - totalWidth) / 2;
 
@@ -60,10 +63,8 @@ export function OrgChartMode({
         }
       }
     },
-    [agents.length],
+    [agentCount],
   );
-
-  const displayAgents = agents.slice(0, 4);
 
   return (
     <pixiContainer>
@@ -71,7 +72,7 @@ export function OrgChartMode({
 
       {/* Boss */}
       <pixiText
-        text="👔 BOSS"
+        text="\uD83D\uDC54 BOSS"
         x={165}
         y={15}
         anchor={0.5}
@@ -84,7 +85,7 @@ export function OrgChartMode({
         resolution={2}
       />
       <pixiText
-        text={bossTask ? bossTask.slice(0, 12) : "Supervising"}
+        text={bossTask ? bossTask.slice(0, 22) : "Supervising"}
         x={165}
         y={28}
         anchor={0.5}
@@ -99,12 +100,13 @@ export function OrgChartMode({
       {/* Agents */}
       {displayAgents.length > 0 ? (
         displayAgents.map((agent, i) => {
-          // Calculate box width and position to fill available space
-          const boxWidth = 75;
-          const totalBoxes = displayAgents.length;
-          const totalWidth = boxWidth * totalBoxes;
-          const startX = (330 - totalWidth) / 2; // Center the group
-          const x = startX + boxWidth * i + boxWidth / 2; // Center of each box
+          const totalWidth = boxWidth * agentCount;
+          const startX = (330 - totalWidth) / 2;
+          const x = startX + boxWidth * i + boxWidth / 2;
+          // Show current task if available, fall back to silly title
+          const subtitle = agent.currentTask
+            ? agent.currentTask.slice(0, 18)
+            : SILLY_TITLES[i % SILLY_TITLES.length].slice(0, 18);
           return (
             <pixiContainer key={agent.id} x={x} y={66}>
               <pixiGraphics
@@ -124,19 +126,19 @@ export function OrgChartMode({
                 anchor={0.5}
                 style={{
                   fontFamily: '"Courier New", monospace',
-                  fontSize: 9,
+                  fontSize: 8,
                   fontWeight: "bold",
                   fill: agent.color,
                 }}
                 resolution={2}
               />
               <pixiText
-                text={SILLY_TITLES[i % SILLY_TITLES.length].slice(0, 15)}
+                text={subtitle}
                 y={22}
                 anchor={0.5}
                 style={{
                   fontFamily: '"Courier New", monospace',
-                  fontSize: 7,
+                  fontSize: 6,
                   fill: "#6b7280",
                 }}
                 resolution={2}

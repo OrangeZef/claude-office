@@ -7,7 +7,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import {
   useGameStore,
   selectEventLog,
@@ -55,11 +55,38 @@ export function EventLog() {
   const [selectedEvent, setSelectedEvent] = useState<EventLogEntry | null>(
     null,
   );
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const isNearBottomRef = useRef(true);
+
+  const handleScroll = useCallback(() => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    const threshold = 60;
+    isNearBottomRef.current =
+      el.scrollHeight - el.scrollTop - el.clientHeight < threshold;
+  }, []);
+
+  // Scroll to bottom when events change and user is near the bottom
+  useEffect(() => {
+    if (isNearBottomRef.current) {
+      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [eventLog.length]);
+
+  // Scroll to bottom on mount (e.g., when switching back from Conversation tab)
+  useEffect(() => {
+    // Use requestAnimationFrame to ensure the DOM has rendered
+    const frame = requestAnimationFrame(() => {
+      bottomRef.current?.scrollIntoView({ behavior: "instant" });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, []);
 
   return (
     <>
-      <div className="flex flex-col h-full bg-slate-950 border border-slate-800 rounded-lg overflow-hidden font-mono text-xs">
-        <div className="bg-slate-900 px-3 py-2 border-b border-slate-800 flex items-center justify-between flex-shrink-0">
+      <div className="flex flex-col h-full bg-neutral-950 border border-neutral-800 rounded-lg overflow-hidden font-mono text-xs">
+        <div className="bg-neutral-900 px-3 py-2 border-b border-neutral-800 flex items-center justify-between flex-shrink-0">
           <div className="flex items-center gap-2 text-slate-300 font-bold uppercase tracking-wider">
             <Terminal size={14} className="text-orange-500" />
             Event Log
@@ -67,7 +94,11 @@ export function EventLog() {
           <div className="text-slate-500">{eventLog.length} events</div>
         </div>
 
-        <div className="flex-grow overflow-y-auto p-2 space-y-1">
+        <div
+          ref={scrollContainerRef}
+          onScroll={handleScroll}
+          className="flex-grow overflow-y-auto p-2 space-y-1"
+        >
           {eventLog.length === 0 ? (
             <div className="text-slate-600 italic text-center p-4 font-mono text-xs">🎙️ Listening for events...</div>
           ) : (
@@ -76,7 +107,7 @@ export function EventLog() {
                 key={`${event.id}-${index}`}
                 role="button"
                 tabIndex={0}
-                className="hover:bg-slate-800/40 px-2 py-1.5 rounded transition-all group border-l-2 border-slate-700 cursor-pointer hover:border-slate-500"
+                className="hover:bg-neutral-800/40 px-2 py-1.5 rounded transition-all group border-l-2 border-neutral-700 cursor-pointer hover:border-neutral-500"
                 onClick={() => setSelectedEvent(event)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
@@ -91,7 +122,7 @@ export function EventLog() {
                     {format(event.timestamp, "HH:mm:ss")}
                   </span>
                   <span
-                    className={`flex-shrink-0 font-bold text-[9px] uppercase tracking-wide px-2 py-0.5 rounded bg-slate-800/30 ${getEventTypeColor(event.type)}`}
+                    className={`flex-shrink-0 font-bold text-[9px] uppercase tracking-wide px-2 py-0.5 rounded bg-neutral-800/30 ${getEventTypeColor(event.type)}`}
                   >
                     {event.type.replace(/_/g, " ").toUpperCase()}
                   </span>
@@ -116,6 +147,7 @@ export function EventLog() {
               </div>
             ))
           )}
+          <div ref={bottomRef} />
         </div>
       </div>
 

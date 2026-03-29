@@ -31,6 +31,8 @@ interface ElevatorProps {
   animeTexture?: Texture | null;
   /** Anime sprite frame array for agents (overrides animeTexture when populated) */
   animeFrames?: Texture[];
+  /** Worker variant frame arrays for diverse agent sprites */
+  workerVariants?: Texture[][];
 }
 
 /**
@@ -90,6 +92,7 @@ export function Elevator({
   sunglassesTexture,
   animeTexture,
   animeFrames,
+  workerVariants,
 }: ElevatorProps): ReactNode {
   const doorScale = useDoorAnimation(isOpen);
 
@@ -113,7 +116,7 @@ export function Elevator({
       )}
 
       {/* Agents inside elevator (behind doors) */}
-      {agentsInside.map((agent) => (
+      {agentsInside.map((agent, idx) => (
         <AgentSprite
           key={agent.id}
           id={agent.id}
@@ -127,6 +130,8 @@ export function Elevator({
           sunglassesTexture={sunglassesTexture}
           animeTexture={animeTexture}
           animeFrames={animeFrames}
+          workerVariants={workerVariants}
+          variantIndex={idx}
           renderBubble={false}
           isTyping={agent.isTyping}
         />

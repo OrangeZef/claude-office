@@ -114,6 +114,13 @@ export function OfficeBackground({
             tint={tile.tint}
           />
         ))}
+
+      {/* Warm glow from city window area - subtle ambient lighting */}
+      <pixiGraphics draw={(g: Graphics) => {
+        g.clear();
+        g.rect(200, 250, 300, 200);
+        g.fill({ color: 0xeab308, alpha: 0.02 });
+      }} />
     </>
   );
 }

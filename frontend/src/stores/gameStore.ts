@@ -233,6 +233,8 @@ interface GameStore {
 
   // ========== UI State ==========
   isConnected: boolean;
+  isReconnecting: boolean;
+  reconnectAttempt: number;
   isReplaying: boolean;
   replaySpeed: number;
   replayEvents: ReplayFrame[];
@@ -247,6 +249,7 @@ interface GameStore {
 
   // UI actions
   setConnected: (connected: boolean) => void;
+  setReconnecting: (reconnecting: boolean, attempt?: number) => void;
   setReplaying: (replaying: boolean) => void;
   setReplaySpeed: (speed: number) => void;
   setReplayEvents: (events: ReplayFrame[]) => void;
@@ -374,6 +377,8 @@ const initialState = {
 
   // UI
   isConnected: false,
+  isReconnecting: false,
+  reconnectAttempt: 0,
   isReplaying: false,
   replaySpeed: 1,
   replayEvents: [] as ReplayFrame[],
@@ -718,14 +723,10 @@ export const useGameStore = create<GameStore>()(
           const shouldQueueForCompaction = isCompacting && !options?.immediate;
           const shouldQueue = shouldQueueForCompaction || bossBubble.content;
 
-          console.log(
-            `[Store] enqueueBubble boss: isCompacting=${isCompacting}, hasContent=${!!bossBubble.content}, shouldQueue=${shouldQueue}, queueLen=${bossBubble.queue.length}, text="${content.text?.slice(0, 30)}..."`,
-          );
 
           if (!shouldQueue) {
             // No current bubble and not compacting, display immediately
             // IMPORTANT: Preserve any existing queued bubbles (e.g., from compaction)
-            console.log(`[Store] Boss bubble DISPLAYED immediately`);
             return {
               boss: {
                 ...state.boss,
@@ -738,9 +739,6 @@ export const useGameStore = create<GameStore>()(
             };
           }
           // Queue it (compacting or already has a bubble displaying)
-          console.log(
-            `[Store] Boss bubble QUEUED (new queueLen=${bossBubble.queue.length + 1})`,
-          );
           return {
             boss: {
               ...state.boss,
@@ -952,6 +950,7 @@ export const useGameStore = create<GameStore>()(
     // ========================================================================
 
     setConnected: (isConnected) => set({ isConnected }),
+    setReconnecting: (isReconnecting, attempt = 0) => set({ isReconnecting, reconnectAttempt: attempt }),
     setReplaying: (isReplaying) => set({ isReplaying }),
     setReplaySpeed: (replaySpeed) => set({ replaySpeed }),
     setReplayEvents: (replayEvents) => set({ replayEvents }),
@@ -1173,6 +1172,8 @@ export const selectBoss = (state: GameStore) => state.boss;
 export const selectArrivalQueue = (state: GameStore) => state.arrivalQueue;
 export const selectDepartureQueue = (state: GameStore) => state.departureQueue;
 export const selectIsConnected = (state: GameStore) => state.isConnected;
+export const selectIsReconnecting = (state: GameStore) => state.isReconnecting;
+export const selectReconnectAttempt = (state: GameStore) => state.reconnectAttempt;
 export const selectIsReplaying = (state: GameStore) => state.isReplaying;
 export const selectDebugMode = (state: GameStore) => state.debugMode;
 export const selectSessionId = (state: GameStore) => state.sessionId;

@@ -141,9 +141,9 @@ export function CellPalette({
                 onDragEnd={handleDragEnd}
                 className={`relative w-12 h-12 border-2 rounded overflow-hidden cursor-move ${
                   draggedIndex === index
-                    ? "border-blue-500 opacity-50"
+                    ? "border-yellow-500 opacity-50"
                     : dragOverIndex === index
-                      ? "border-blue-400 bg-blue-500/20"
+                      ? "border-yellow-400 bg-yellow-500/20"
                       : "border-gray-600"
                 }`}
               >

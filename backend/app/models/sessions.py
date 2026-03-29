@@ -94,6 +94,8 @@ class WhiteboardData(BaseModel):
     )
     news_items: list[NewsItem] = Field(default_factory=lambda: cast(list[NewsItem], []))
     coffee_cups: int = 0
+    total_input_tokens: int = 0
+    total_output_tokens: int = 0
     file_edits: dict[str, int] = Field(default_factory=dict)
     background_tasks: list[BackgroundTask] = Field(
         default_factory=lambda: cast(list[BackgroundTask], [])

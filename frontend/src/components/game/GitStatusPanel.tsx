@@ -6,6 +6,7 @@
 
 "use client";
 
+import { useState, useEffect, useRef } from "react";
 import { useGameStore, selectGitStatus } from "@/stores/gameStore";
 import {
   GitBranch,
@@ -17,6 +18,8 @@ import {
   FileX,
   FilePen,
   FileQuestion,
+  ChevronRight,
+  ChevronDown,
 } from "lucide-react";
 import { FileStatus } from "@/types";
 
@@ -60,23 +63,59 @@ const getStatusLabel = (status: FileStatus) => {
   }
 };
 
-export function GitStatusPanel() {
+export function GitStatusPanel({ onCollapsedChange }: { onCollapsedChange?: (collapsed: boolean) => void } = {}) {
   const gitStatus = useGameStore(selectGitStatus);
   const sessionId = useGameStore((state) => state.sessionId);
   const hasSession = isRealSession(sessionId);
 
+  const hasGitData = !!gitStatus && !!(gitStatus.branch || (gitStatus.changed_files && gitStatus.changed_files.length > 0));
+  const [collapsed, setCollapsed] = useState(!hasGitData);
+  const userToggledRef = useRef(false);
+
+  // Auto-expand when git data arrives, auto-collapse when gone (unless user toggled)
+  useEffect(() => {
+    if (!userToggledRef.current) {
+      setCollapsed(!hasGitData);
+    }
+  }, [hasGitData]);
+
+  // Notify parent of collapsed state changes
+  useEffect(() => {
+    onCollapsedChange?.(collapsed);
+  }, [collapsed, onCollapsedChange]);
+
+  const handleToggle = () => {
+    userToggledRef.current = true;
+    setCollapsed((prev) => !prev);
+  };
+
   if (!gitStatus) {
+    if (!hasSession) {
+      return (
+        <div className="text-slate-600 text-xs italic p-2 font-mono">No git repo detected</div>
+      );
+    }
+    // Collapsed header when waiting for git data
     return (
-      <div className="flex flex-col h-full bg-slate-950 border border-slate-800 rounded-lg overflow-hidden font-mono text-xs">
-        <div className="bg-slate-900 px-3 py-2 border-b border-slate-800 flex items-center gap-2">
+      <div className="flex flex-col bg-neutral-950 border border-neutral-800 rounded-lg overflow-hidden font-mono text-xs">
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={handleToggle}
+          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleToggle(); } }}
+          className="bg-neutral-900 px-3 py-2 flex items-center gap-2 cursor-pointer hover:bg-neutral-800/60 transition-colors select-none"
+        >
+          {collapsed ? <ChevronRight size={12} className="text-slate-500" /> : <ChevronDown size={12} className="text-slate-500" />}
           <GitBranch size={14} className="text-slate-500" />
           <span className="text-slate-300 font-bold uppercase tracking-wider">
             Git Status
           </span>
         </div>
-        <div className="flex-grow flex items-center justify-center text-slate-600 italic p-4 text-center">
-          {hasSession ? "Waiting for git status..." : "No session selected"}
-        </div>
+        {!collapsed && (
+          <div className="flex-grow flex items-center justify-center text-slate-600 italic p-4 text-center border-t border-neutral-800">
+            Waiting for git status...
+          </div>
+        )}
       </div>
     );
   }
@@ -86,10 +125,17 @@ export function GitStatusPanel() {
   const stagedCount = changedFiles.filter((f) => f.staged).length;
 
   return (
-    <div className="flex flex-col h-full bg-slate-950 border border-slate-800 rounded-lg overflow-hidden font-mono text-xs">
-      {/* Header */}
-      <div className="bg-slate-900 px-3 py-2 border-b border-slate-800 flex items-center justify-between flex-shrink-0">
+    <div className="flex flex-col h-full bg-neutral-950 border border-neutral-800 rounded-lg overflow-hidden font-mono text-xs">
+      {/* Header — clickable to toggle */}
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={handleToggle}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleToggle(); } }}
+        className="bg-neutral-900 px-3 py-2 border-b border-neutral-800 flex items-center justify-between flex-shrink-0 cursor-pointer hover:bg-neutral-800/60 transition-colors select-none"
+      >
         <div className="flex items-center gap-2 text-slate-300 font-bold uppercase tracking-wider">
+          {collapsed ? <ChevronRight size={12} className="text-slate-500" /> : <ChevronDown size={12} className="text-slate-500" />}
           <GitBranch size={14} className="text-emerald-500" />
           Git Status
         </div>
@@ -109,95 +155,100 @@ export function GitStatusPanel() {
         </div>
       </div>
 
-      {/* Branch Info */}
-      <div className="px-3 py-2 border-b border-slate-800 flex-shrink-0">
-        <span className="text-emerald-400 font-bold">{gitStatus.branch}</span>
-      </div>
-
-      {/* Changed Files Section */}
-      {changedFiles.length > 0 && (
-        <div className="flex-shrink-0 max-h-32 flex flex-col border-b border-slate-800">
-          <div className="px-3 py-1.5 bg-slate-900/50 flex items-center gap-2 text-slate-400 flex-shrink-0">
-            <FileEdit size={12} />
-            <span className="font-bold uppercase tracking-wider text-[10px]">
-              Changed Files
-            </span>
-            <span className="text-slate-600 text-[10px]">
-              ({changedFiles.length})
-            </span>
-            {stagedCount > 0 && (
-              <span className="text-emerald-400 text-[10px]">
-                {stagedCount} staged
-              </span>
-            )}
+      {/* Body — hidden when collapsed */}
+      {!collapsed && (
+        <>
+          {/* Branch Info */}
+          <div className="px-3 py-2 border-b border-neutral-800 flex-shrink-0">
+            <span className="text-emerald-400 font-bold">{gitStatus.branch}</span>
           </div>
-          <div className="flex-grow overflow-y-auto px-3 py-2">
-            <div className="flex flex-wrap gap-1">
-              {changedFiles.map((file) => {
-                const normalizedPath = file.path.replace(/[\\/]+$/, "");
-                const parts = normalizedPath.split(/[\\/]/);
-                const filename = parts.pop() || normalizedPath || file.path;
-                return (
-                  <span
-                    key={file.path}
-                    className={`px-1.5 py-0.5 rounded text-[9px] flex items-center gap-1 max-w-[140px] ${
-                      file.staged
-                        ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
-                        : "bg-amber-500/20 text-amber-400 border border-amber-500/30"
-                    }`}
-                    title={`${getStatusLabel(file.status)}: ${file.path}${file.staged ? " (staged)" : ""}`}
-                  >
-                    {getStatusIcon(file.status)}
-                    <span className="truncate">{filename}</span>
-                  </span>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      )}
 
-      {/* Commits Header */}
-      <div className="px-3 py-1.5 bg-slate-900/50 border-b border-slate-800 flex items-center gap-2 text-slate-400 flex-shrink-0">
-        <GitCommit size={12} />
-        <span className="font-bold uppercase tracking-wider text-[10px]">
-          Recent Commits
-        </span>
-        <span className="text-slate-600 text-[10px]">({commits.length})</span>
-      </div>
-
-      {/* Commits List (Scrollable) */}
-      <div className="flex-grow overflow-y-auto">
-        {commits.length === 0 ? (
-          <div className="text-slate-600 italic p-4 text-center">
-            No commits found
-          </div>
-        ) : (
-          <div className="divide-y divide-slate-800/50">
-            {commits.map((commit) => (
-              <div
-                key={commit.hash}
-                className="px-3 py-2 hover:bg-slate-900/50 transition-colors group"
-              >
-                <div className="flex items-start justify-between gap-2 mb-1">
-                  <span className="text-cyan-400 font-bold flex-shrink-0 group-hover:text-cyan-300">
-                    {commit.hash}
+          {/* Changed Files Section */}
+          {changedFiles.length > 0 && (
+            <div className="flex-shrink-0 max-h-32 flex flex-col border-b border-neutral-800">
+              <div className="px-3 py-1.5 bg-neutral-900/50 flex items-center gap-2 text-slate-400 flex-shrink-0">
+                <FileEdit size={12} />
+                <span className="font-bold uppercase tracking-wider text-[10px]">
+                  Changed Files
+                </span>
+                <span className="text-slate-600 text-[10px]">
+                  ({changedFiles.length})
+                </span>
+                {stagedCount > 0 && (
+                  <span className="text-emerald-400 text-[10px]">
+                    {stagedCount} staged
                   </span>
-                  <span className="text-slate-500 text-[10px] flex-shrink-0">
-                    {commit.relative_time}
-                  </span>
-                </div>
-                <div className="text-slate-300 leading-tight line-clamp-2 group-hover:text-white">
-                  {commit.message}
-                </div>
-                <div className="text-slate-500 text-[10px] mt-1">
-                  {commit.author}
+                )}
+              </div>
+              <div className="flex-grow overflow-y-auto px-3 py-2">
+                <div className="flex flex-wrap gap-1">
+                  {changedFiles.map((file) => {
+                    const normalizedPath = file.path.replace(/[\\/]+$/, "");
+                    const parts = normalizedPath.split(/[\\/]/);
+                    const filename = parts.pop() || normalizedPath || file.path;
+                    return (
+                      <span
+                        key={file.path}
+                        className={`px-1.5 py-0.5 rounded text-[9px] flex items-center gap-1 max-w-[140px] ${
+                          file.staged
+                            ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                            : "bg-amber-500/20 text-amber-400 border border-amber-500/30"
+                        }`}
+                        title={`${getStatusLabel(file.status)}: ${file.path}${file.staged ? " (staged)" : ""}`}
+                      >
+                        {getStatusIcon(file.status)}
+                        <span className="truncate">{filename}</span>
+                      </span>
+                    );
+                  })}
                 </div>
               </div>
-            ))}
+            </div>
+          )}
+
+          {/* Commits Header */}
+          <div className="px-3 py-1.5 bg-neutral-900/50 border-b border-neutral-800 flex items-center gap-2 text-slate-400 flex-shrink-0">
+            <GitCommit size={12} />
+            <span className="font-bold uppercase tracking-wider text-[10px]">
+              Recent Commits
+            </span>
+            <span className="text-slate-600 text-[10px]">({commits.length})</span>
           </div>
-        )}
-      </div>
+
+          {/* Commits List (Scrollable) */}
+          <div className="flex-grow overflow-y-auto">
+            {commits.length === 0 ? (
+              <div className="text-slate-600 italic p-4 text-center">
+                No commits found
+              </div>
+            ) : (
+              <div className="divide-y divide-neutral-800/50">
+                {commits.map((commit) => (
+                  <div
+                    key={commit.hash}
+                    className="px-3 py-2 hover:bg-neutral-900/50 transition-colors group"
+                  >
+                    <div className="flex items-start justify-between gap-2 mb-1">
+                      <span className="text-cyan-400 font-bold flex-shrink-0 group-hover:text-cyan-300">
+                        {commit.hash}
+                      </span>
+                      <span className="text-slate-500 text-[10px] flex-shrink-0">
+                        {commit.relative_time}
+                      </span>
+                    </div>
+                    <div className="text-slate-300 leading-tight line-clamp-2 group-hover:text-white">
+                      {commit.message}
+                    </div>
+                    <div className="text-slate-500 text-[10px] mt-1">
+                      {commit.author}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
 }

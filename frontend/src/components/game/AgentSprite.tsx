@@ -7,11 +7,12 @@
 
 "use client";
 
-import { memo, useMemo, useState, useCallback, type ReactNode } from "react";
+import { memo, useMemo, useState, useCallback, useRef, type ReactNode } from "react";
 import { useTick } from "@pixi/react";
 import { Graphics, TextStyle, Texture } from "pixi.js";
 import type { Position, BubbleContent } from "@/types";
 import type { AgentPhase } from "@/stores/gameStore";
+import { usePreferencesStore } from "@/stores/preferencesStore";
 import { isInElevatorZone } from "@/systems/queuePositions";
 import { ICON_MAP } from "./shared/iconMap";
 import { drawBubble, drawIconBadge } from "./shared/drawBubble";
@@ -37,6 +38,7 @@ export interface AgentSpriteProps {
   renderBubble?: boolean; // Whether to render bubble (default true)
   renderLabel?: boolean; // Whether to render name label (default true)
   isTyping?: boolean; // Whether agent is typing (animates arms)
+  backendState?: string; // Backend state for visual indicators (e.g. "waiting_permission")
 }
 
 // ============================================================================
@@ -182,6 +184,7 @@ function AgentSpriteComponent({
   renderBubble = true,
   renderLabel = true,
   isTyping = false,
+  backendState,
 }: AgentSpriteProps): ReactNode {
   // Memoize draw callback (fallback only)
   const drawCallback = useMemo(
@@ -195,20 +198,53 @@ function AgentSpriteComponent({
   // Animate magic sparkle — cycles through frames when typing
   const [sparkleFrame, setSparkleFrame] = useState(0);
 
+  // Pulsing indicator for waiting_permission state
+  const [permissionPulse, setPermissionPulse] = useState(0);
+
   // Resolve which frame array to use: workerVariants takes priority over animeFrames
   const resolvedFrames: Texture[] | undefined =
     workerVariants && workerVariants.length > 0
       ? workerVariants[variantIndex % workerVariants.length]
       : animeFrames;
 
-  useTick((ticker) => {
-    if (resolvedFrames && resolvedFrames.length > 1) {
-      setFrameIndex((f) => (f + ticker.deltaTime * 0.12) % resolvedFrames.length);
+  // Animation speed from preferences
+  const animationSpeed = usePreferencesStore((s) => s.animationSpeed);
+  const speedMultiplier = animationSpeed === "slow" ? 0.5 : animationSpeed === "fast" ? 2.0 : 1.0;
+
+  // Stable refs for tick callback dependencies
+  const resolvedFramesRef = useRef(resolvedFrames);
+  resolvedFramesRef.current = resolvedFrames;
+  const isTypingRef = useRef(isTyping);
+  isTypingRef.current = isTyping;
+  const backendStateRef = useRef(backendState);
+  backendStateRef.current = backendState;
+  const speedMultiplierRef = useRef(speedMultiplier);
+  speedMultiplierRef.current = speedMultiplier;
+
+  const tickCallback = useCallback((ticker: { deltaTime: number }) => {
+    const frames = resolvedFramesRef.current;
+    const typing = isTypingRef.current;
+    const bState = backendStateRef.current;
+    const speed = speedMultiplierRef.current;
+
+    // Early return if no animations need updating
+    const hasFrameAnim = frames && frames.length > 1;
+    const hasSparkle = typing;
+    const hasPermission = bState === "waiting_permission";
+    if (!hasFrameAnim && !hasSparkle && !hasPermission) return;
+
+    if (hasFrameAnim) {
+      setFrameIndex((f) => (f + ticker.deltaTime * 0.12 * speed) % frames.length);
     }
-    if (isTyping) {
-      setSparkleFrame((f) => (f + ticker.deltaTime * 0.18) % 4);
+    if (hasSparkle) {
+      setSparkleFrame((f) => (f + ticker.deltaTime * 0.18 * speed) % 4);
     }
-  });
+    if (hasPermission) {
+      setPermissionPulse((p) => p + ticker.deltaTime * 0.08 * speed);
+    }
+  }, []);
+
+  useTick(tickCallback);
 
   const activeTexture =
     resolvedFrames && resolvedFrames.length > 0
@@ -221,6 +257,13 @@ function AgentSpriteComponent({
 
   return (
     <pixiContainer x={position.x} y={position.y}>
+      {/* Drop shadow */}
+      <pixiGraphics draw={(g: Graphics) => {
+        g.clear();
+        g.ellipse(0, 0, 20, 6);
+        g.fill({ color: 0x000000, alpha: 0.25 });
+      }} />
+
       {/* Agent body — anime sprite if available, else colored capsule */}
       {activeTexture ? (
         <pixiSprite
@@ -228,7 +271,7 @@ function AgentSpriteComponent({
           anchor={{ x: 0.5, y: 1 }}
           x={0}
           y={0}
-          scale={{ x: (AGENT_WIDTH * 1.8) / 192, y: (AGENT_HEIGHT * 1.8) / 320 }}
+          scale={{ x: (AGENT_WIDTH * 2.1) / 384, y: (AGENT_HEIGHT * 2.1) / 640 }}
         />
       ) : (
         <pixiGraphics draw={drawCallback} />
@@ -273,6 +316,27 @@ function AgentSpriteComponent({
             resolution={2}
           />
         </pixiContainer>
+      )}
+
+      {/* Waiting permission indicator - pulsing gold exclamation mark */}
+      {backendState === "waiting_permission" && !isInElevatorZone(position) && (
+        <pixiGraphics
+          x={0}
+          y={-130}
+          alpha={0.3 + Math.abs(Math.sin(permissionPulse)) * 0.7}
+          draw={(g: Graphics) => {
+            g.clear();
+            // Gold circle background
+            g.circle(0, 0, 10);
+            g.fill({ color: 0xeab308, alpha: 0.3 });
+            // Exclamation mark stem
+            g.roundRect(-2, -7, 4, 9, 1);
+            g.fill(0xeab308);
+            // Exclamation mark dot
+            g.circle(0, 6, 2);
+            g.fill(0xeab308);
+          }}
+        />
       )}
 
       {/* Bubble - hide when in elevator or when renderBubble is false */}
@@ -391,7 +455,7 @@ export interface AgentLabelProps {
 
 function AgentLabelComponent({ name, position }: AgentLabelProps): ReactNode {
   return (
-    <pixiContainer x={position.x} y={position.y - 110} scale={0.5}>
+    <pixiContainer x={position.x} y={position.y - 175} scale={0.5}>
       <pixiText
         text={name}
         anchor={0.5}

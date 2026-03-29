@@ -80,7 +80,7 @@ function ThinkingEntry({ entry }: { entry: ConversationEntry }) {
 
 function ToolEntry({ entry }: { entry: ConversationEntry }) {
   return (
-    <div className="flex items-center gap-2 px-2 py-1 rounded bg-slate-800/40 border border-slate-700/30">
+    <div className="flex items-center gap-2 px-2 py-1 rounded bg-neutral-800/40 border border-neutral-700/30">
       <Wrench size={10} className="text-amber-500/70 flex-shrink-0" />
       <span className="text-[10px] text-amber-400/80 font-mono flex-shrink-0">
         {getToolIcon(entry.toolName)} {entry.toolName}
@@ -118,7 +118,7 @@ function MarkdownContent({ text }: { text: string }) {
           </p>
         ),
         h1: ({ children }) => (
-          <h1 className="text-slate-100 text-[13px] font-bold mt-2 mb-1 border-b border-slate-700 pb-0.5">
+          <h1 className="text-slate-100 text-[13px] font-bold mt-2 mb-1 border-b border-neutral-700 pb-0.5">
             {children}
           </h1>
         ),
@@ -141,11 +141,11 @@ function MarkdownContent({ text }: { text: string }) {
         code: ({ children, className }) => {
           const isBlock = className?.startsWith("language-");
           return isBlock ? (
-            <code className="block bg-slate-950/80 border border-slate-700/60 rounded px-2 py-1.5 text-[10px] font-mono text-[#00ff00] overflow-x-auto whitespace-pre my-1">
+            <code className="block bg-neutral-950/80 border border-neutral-700/60 rounded px-2 py-1.5 text-[10px] font-mono text-green-500 overflow-x-auto whitespace-pre my-1">
               {children}
             </code>
           ) : (
-            <code className="bg-slate-950/80 border border-slate-700/60 rounded px-1 py-0.5 text-[10px] font-mono text-[#00ff00]">
+            <code className="bg-neutral-950/80 border border-neutral-700/60 rounded px-1 py-0.5 text-[10px] font-mono text-green-500">
               {children}
             </code>
           );
@@ -165,7 +165,7 @@ function MarkdownContent({ text }: { text: string }) {
         ),
         li: ({ children }) => <li className="leading-relaxed">{children}</li>,
         blockquote: ({ children }) => (
-          <blockquote className="border-l-2 border-slate-600 pl-2 my-1 text-slate-400 italic">
+          <blockquote className="border-l-2 border-neutral-600 pl-2 my-1 text-slate-400 italic">
             {children}
           </blockquote>
         ),
@@ -179,7 +179,7 @@ function MarkdownContent({ text }: { text: string }) {
             {children}
           </a>
         ),
-        hr: () => <hr className="border-slate-700 my-2" />,
+        hr: () => <hr className="border-neutral-700 my-2" />,
       }}
     >
       {text}
@@ -204,7 +204,7 @@ function AssistantEntry({ entry }: { entry: ConversationEntry }) {
           </span>
         )}
       </div>
-      <div className="bg-slate-800/60 border border-slate-700/50 rounded-xl rounded-tl-sm px-3 py-2 w-full">
+      <div className="bg-neutral-800/60 border border-neutral-700/50 rounded-xl rounded-tl-sm px-3 py-2 w-full">
         <MarkdownContent text={expanded ? entry.text : preview} />
         {isLong && (
           <button
@@ -264,14 +264,26 @@ export function ConversationHistory() {
   const modalBottomRef = useRef<HTMLDivElement>(null);
   const [showTools, setShowTools] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  const [agentFilter, setAgentFilter] = useState<string>("all");
 
   const toolCount = conversation.filter((e) => e.role === "tool").length;
   const messageCount = conversation.filter(
     (e) => e.role === "user" || e.role === "assistant",
   ).length;
-  const visible = showTools
+
+  // Compute unique agent IDs
+  const uniqueAgentIds = React.useMemo(() => {
+    const ids = new Set<string>();
+    for (const entry of conversation) {
+      if (entry.agentId) ids.add(entry.agentId);
+    }
+    return Array.from(ids);
+  }, [conversation]);
+
+  const visible = (showTools
     ? conversation
-    : conversation.filter((e) => e.role !== "tool");
+    : conversation.filter((e) => e.role !== "tool")
+  ).filter((e) => agentFilter === "all" || e.agentId === agentFilter);
 
   // Auto-scroll to bottom on new entries
   useEffect(() => {
@@ -294,8 +306,36 @@ export function ConversationHistory() {
     return () => document.removeEventListener("keydown", handler);
   }, [expanded]);
 
+  const agentFilterChips = uniqueAgentIds.length > 0 ? (
+    <div className="flex flex-wrap gap-1 px-3 py-1.5 border-b border-neutral-800 bg-neutral-900/30 flex-shrink-0">
+      <button
+        onClick={() => setAgentFilter("all")}
+        className={`px-2 py-0.5 rounded-full text-[10px] font-mono transition-colors ${
+          agentFilter === "all"
+            ? "bg-yellow-400 text-black font-bold"
+            : "bg-neutral-800 text-slate-400 hover:text-yellow-400"
+        }`}
+      >
+        All
+      </button>
+      {uniqueAgentIds.map((id) => (
+        <button
+          key={id}
+          onClick={() => setAgentFilter(id)}
+          className={`px-2 py-0.5 rounded-full text-[10px] font-mono transition-colors ${
+            agentFilter === id
+              ? "bg-yellow-400 text-black font-bold"
+              : "bg-neutral-800 text-slate-400 hover:text-yellow-400"
+          }`}
+        >
+          {id === "main" ? "main" : id.slice(0, 8)}
+        </button>
+      ))}
+    </div>
+  ) : null;
+
   const header = (onExpand?: () => void) => (
-    <div className="bg-slate-900 px-3 py-2 border-b border-slate-800 flex items-center justify-between flex-shrink-0">
+    <div className="bg-neutral-900 px-3 py-2 border-b border-neutral-800 flex items-center justify-between flex-shrink-0">
       <div className="flex items-center gap-2 text-slate-300 font-bold uppercase tracking-wider">
         <MessageSquare size={14} className="text-cyan-500" />
         Conversation
@@ -307,7 +347,7 @@ export function ConversationHistory() {
           className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold border transition-colors ${
             showTools
               ? "bg-amber-500/20 border-amber-500/40 text-amber-400"
-              : "bg-slate-800 border-slate-700 text-slate-500 hover:text-slate-300"
+              : "bg-neutral-800 border-neutral-700 text-slate-500 hover:text-slate-300"
           }`}
           title={showTools ? "Hide tool calls" : "Show tool calls"}
         >
@@ -317,7 +357,7 @@ export function ConversationHistory() {
         {onExpand ? (
           <button
             onClick={onExpand}
-            className="p-0.5 rounded text-slate-500 hover:text-slate-300 hover:bg-slate-800 transition-colors"
+            className="p-0.5 rounded text-slate-500 hover:text-slate-300 hover:bg-neutral-800 transition-colors"
             title="Expand conversation"
           >
             <Maximize2 size={12} />
@@ -325,7 +365,7 @@ export function ConversationHistory() {
         ) : (
           <button
             onClick={() => setExpanded(false)}
-            className="p-0.5 rounded text-slate-500 hover:text-slate-300 hover:bg-slate-800 transition-colors"
+            className="p-0.5 rounded text-slate-500 hover:text-slate-300 hover:bg-neutral-800 transition-colors"
             title="Close"
           >
             <X size={12} />
@@ -338,8 +378,9 @@ export function ConversationHistory() {
   return (
     <>
       {/* Inline panel */}
-      <div className="flex flex-col h-full bg-slate-950 border border-slate-800 rounded-lg overflow-hidden font-mono text-xs">
+      <div className="flex flex-col h-full bg-neutral-950 border border-neutral-800 rounded-lg overflow-hidden font-mono text-xs">
         {header(() => setExpanded(true))}
+        {agentFilterChips}
         <div className="flex-grow overflow-y-auto p-3 space-y-2">
           {conversation.length === 0 ? (
             <div className="text-slate-600 italic text-center p-4 font-mono text-xs">💬 No conversation yet. Start a Claude Code session.</div>
@@ -356,11 +397,12 @@ export function ConversationHistory() {
           onClick={() => setExpanded(false)}
         >
           <div
-            className="flex flex-col bg-slate-950 border border-slate-700 rounded-xl shadow-2xl font-mono text-xs overflow-hidden"
+            className="flex flex-col bg-neutral-950 border border-neutral-700 rounded-xl shadow-2xl font-mono text-xs overflow-hidden"
             style={{ width: "min(900px, 90vw)", height: "85vh" }}
             onClick={(e) => e.stopPropagation()}
           >
             {header()}
+            {agentFilterChips}
             <div className="flex-grow overflow-y-auto p-4 space-y-2">
               {conversation.length === 0 ? (
                 <div className="text-slate-600 italic text-center p-4 font-mono text-xs">💬 No conversation yet. Start a Claude Code session.</div>

@@ -8,7 +8,7 @@
  */
 
 import { type ReactNode, useMemo } from "react";
-import { Texture } from "pixi.js";
+import { Graphics, Texture } from "pixi.js";
 import { DeskMarquee } from "./DeskMarquee";
 
 // ============================================================================
@@ -208,6 +208,14 @@ export function DeskSurfacesTop({
     <>
       {desks.map((desk, i) => (
         <pixiContainer key={i} x={desk.x} y={desk.y}>
+          {/* Screen glow behind monitor */}
+          {monitorTexture && (
+            <pixiGraphics draw={(g: Graphics) => {
+              g.clear();
+              g.rect(-15, -12, 30, 24);
+              g.fill({ color: 0x88ccff, alpha: 0.15 });
+            }} x={-45} y={27} />
+          )}
           {/* Monitor - back of desk surface (far from chair) */}
           {monitorTexture && (
             <pixiSprite

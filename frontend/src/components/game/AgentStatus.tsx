@@ -7,6 +7,7 @@
 
 "use client";
 
+import { useState, useEffect, useRef } from "react";
 import { useGameStore, selectAgents } from "@/stores/gameStore";
 import { useShallow } from "zustand/react/shallow";
 import {
@@ -16,6 +17,8 @@ import {
   Activity,
   MapPin,
   Layers,
+  ChevronRight,
+  ChevronDown,
 } from "lucide-react";
 
 // Backend state colors (work status)
@@ -39,9 +42,9 @@ function getBackendStateColor(state: string) {
       return "bg-purple-500/20 text-purple-400 border-purple-500/40";
     case "arriving":
     case "in_elevator":
-      return "bg-slate-500/20 text-slate-400 border-slate-500/40";
+      return "bg-neutral-500/20 text-slate-400 border-neutral-500/40";
     default:
-      return "bg-slate-800 text-slate-400 border-slate-700";
+      return "bg-neutral-800 text-slate-400 border-neutral-700";
   }
 }
 
@@ -49,7 +52,7 @@ function getBackendStateColor(state: string) {
 function getPhaseColor(phase: string) {
   switch (phase) {
     case "idle":
-      return "bg-green-500/20 text-[#00ff00] border-green-400/40";
+      return "bg-green-500/20 text-green-500 border-green-400/40";
     case "arriving":
     case "in_arrival_queue":
     case "walking_to_ready":
@@ -67,7 +70,7 @@ function getPhaseColor(phase: string) {
     case "in_elevator":
       return "bg-rose-500/20 text-rose-400 border-rose-500/40";
     default:
-      return "bg-slate-800 text-slate-400 border-slate-700";
+      return "bg-neutral-800 text-slate-400 border-neutral-700";
   }
 }
 
@@ -81,42 +84,71 @@ function formatState(state: string): string {
   return state.replace(/_/g, " ");
 }
 
-export function AgentStatus() {
+export function AgentStatus({ onCollapsedChange }: { onCollapsedChange?: (collapsed: boolean) => void } = {}) {
   const agents = useGameStore(useShallow(selectAgents));
   const agentArray = Array.from(agents.values());
+  const agentCount = agentArray.length;
 
   // Sort by number for consistent ordering
   agentArray.sort((a, b) => a.number - b.number);
 
+  const [collapsed, setCollapsed] = useState(agentCount === 0);
+  const userToggledRef = useRef(false);
+
+  // Auto-expand when agents arrive, auto-collapse when back to 0 (unless user manually toggled)
+  useEffect(() => {
+    if (!userToggledRef.current) {
+      setCollapsed(agentCount === 0);
+    }
+  }, [agentCount]);
+
+  // Notify parent of collapsed state changes
+  useEffect(() => {
+    onCollapsedChange?.(collapsed);
+  }, [collapsed, onCollapsedChange]);
+
+  const handleToggle = () => {
+    userToggledRef.current = true;
+    setCollapsed((prev) => !prev);
+  };
+
   return (
-    <div className="flex flex-col bg-slate-950 border border-slate-800 rounded-lg overflow-hidden font-mono text-xs h-full">
-      {/* Header */}
-      <div className="bg-slate-900 px-3 py-2 border-b border-slate-800 flex items-center justify-between flex-shrink-0">
+    <div className="flex flex-col bg-neutral-950 border border-neutral-800 rounded-lg overflow-hidden font-mono text-xs h-full">
+      {/* Header — clickable to toggle */}
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={handleToggle}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleToggle(); } }}
+        className="bg-neutral-900 px-3 py-2 border-b border-neutral-800 flex items-center justify-between flex-shrink-0 cursor-pointer hover:bg-neutral-800/60 transition-colors select-none"
+      >
         <div className="flex items-center gap-2 text-slate-300 font-bold uppercase tracking-wider text-[11px]">
-          <Users size={14} className="text-blue-400" />
+          {collapsed ? <ChevronRight size={12} className="text-slate-500" /> : <ChevronDown size={12} className="text-slate-500" />}
+          <Users size={14} className="text-yellow-400" />
           Agent State
         </div>
         <div className="flex items-center gap-1">
           <span className="text-2xl font-bold text-slate-200 tabular-nums">
-            {agentArray.length}
+            {agentCount}
           </span>
           <span className="text-slate-500 text-[10px]">agents</span>
         </div>
       </div>
 
-      {/* Agent list - scrollable, fills remaining height */}
+      {/* Agent list - scrollable, fills remaining height; hidden when collapsed */}
+      {!collapsed && (
       <div className="flex-grow overflow-y-auto p-2 space-y-2 min-h-0">
         {agentArray.length === 0 ? (
-          <div className="text-slate-600 italic text-center p-4 font-mono text-xs">⏳ No agents yet...</div>
+          <div className="text-slate-600 italic text-center p-4 font-mono text-xs">No agents yet...</div>
         ) : (
           agentArray.map((agent) => (
             <div
               key={agent.id}
-              className="bg-slate-900/40 backdrop-blur-sm border border-slate-800 rounded-md overflow-hidden hover:border-slate-700 transition-colors"
+              className="bg-neutral-900/40 backdrop-blur-sm border border-neutral-800 rounded-md overflow-hidden hover:border-neutral-700 transition-colors"
             >
               {/* Agent header with name and color */}
               <div
-                className="flex items-center justify-between px-2 py-1.5 border-b border-slate-800/50"
+                className="flex items-center justify-between px-2 py-1.5 border-b border-neutral-800/50"
                 style={{ borderLeftWidth: 4, borderLeftColor: agent.color }}
               >
                 <div className="flex items-center gap-2 min-w-0">
@@ -210,6 +242,7 @@ export function AgentStatus() {
           ))
         )}
       </div>
+      )}
     </div>
   );
 }

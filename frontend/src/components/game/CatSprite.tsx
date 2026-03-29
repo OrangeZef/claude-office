@@ -11,6 +11,7 @@
 import { memo, useRef, useCallback, useState, useEffect, useMemo } from "react";
 import { useTick } from "@pixi/react";
 import { Graphics, TextStyle } from "pixi.js";
+import { usePreferencesStore } from "@/stores/preferencesStore";
 
 // ============================================================================
 // TYPES
@@ -312,8 +313,11 @@ function CatSpriteComponent({ color, accentColor, startX, startY }: CatSpritePro
     [],
   );
 
+  const catAnimationSpeed = usePreferencesStore((s) => s.animationSpeed);
+  const catSpeedMultiplier = catAnimationSpeed === "slow" ? 0.5 : catAnimationSpeed === "fast" ? 2.0 : 1.0;
+
   useTick((ticker) => {
-    const dt = ticker.deltaTime / 60; // seconds
+    const dt = (ticker.deltaTime / 60) * catSpeedMultiplier; // seconds
 
     if (pauseRef.current > 0) {
       pauseRef.current -= dt;

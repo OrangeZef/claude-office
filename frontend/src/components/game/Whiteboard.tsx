@@ -15,7 +15,7 @@
  * 6: Safety Board (days since incident)
  * 7: Timeline (agent lifespans)
  * 8: News Ticker (scrolling headlines)
- * 9: Coffee (coffee cup tracker)
+ * 9: Context (token budget / context utilization)
  * 10: Heat Map (file edit frequency) - click to reach from mode 9
  */
 

@@ -83,7 +83,7 @@ export function MobileDrawer({
             <h2 className="text-lg font-bold font-mono text-white">Menu</h2>
             <button
               onClick={onClose}
-              className="p-2 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-yellow-400 transition-colors"
+              className="p-2 hover:bg-neutral-800 rounded-lg text-slate-400 hover:text-yellow-400 transition-colors"
             >
               <X size={20} />
             </button>
@@ -146,7 +146,7 @@ export function MobileDrawer({
                       className={`px-3 py-2.5 rounded-md cursor-pointer transition-colors ${
                         isActive
                           ? "bg-yellow-400/10 border-l-2 border-yellow-400"
-                          : "hover:bg-slate-800/50"
+                          : "hover:bg-neutral-800/50"
                       }`}
                       onClick={() => {
                         onSessionSelect(session.id);

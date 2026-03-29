@@ -46,6 +46,9 @@ export type {
   EventType,
   EventData,
   Event,
+  // Docker
+  ContainerInfo,
+  DockerStatusResponse,
 } from "./generated";
 
 // Re-export Commit with the legacy GitCommit alias for backward compatibility

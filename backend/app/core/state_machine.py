@@ -312,6 +312,8 @@ class StateMachine:
             last_incident_time=self.whiteboard.last_incident_time,
             agent_lifespans=self.whiteboard.get_agent_lifespans_snapshot(),
             news_items=self.whiteboard.get_news_items_snapshot(),
+            total_input_tokens=self.total_input_tokens,
+            total_output_tokens=self.total_output_tokens,
             coffee_cups=self.whiteboard.coffee_cups,
             file_edits=self.whiteboard.get_file_edits_snapshot(),
             background_tasks=self.whiteboard.get_background_tasks_snapshot(),

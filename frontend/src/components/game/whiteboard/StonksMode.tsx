@@ -1,10 +1,11 @@
 "use client";
 
 /**
- * StonksMode - Mode 4: Fake productivity stock tickers with sparklines.
+ * StonksMode - Mode 4: Productivity stock tickers with real-data sparklines.
  *
  * Displays four pseudo-stock symbols based on session metrics, with animated
- * price fluctuation and mini sparkline charts that update every 2 seconds.
+ * price display and mini sparkline charts driven by rolling history of actual
+ * metric values.
  */
 
 import { Graphics } from "pixi.js";
@@ -15,53 +16,85 @@ export interface StonksModeProps {
   data: WhiteboardData;
 }
 
+const HISTORY_LENGTH = 10;
+
+interface RollingHistory {
+  task: number[];
+  bug: number[];
+  cafe: number[];
+  code: number[];
+}
+
+function pushValue(arr: number[], value: number): number[] {
+  const next = [...arr, value];
+  if (next.length > HISTORY_LENGTH) next.shift();
+  return next;
+}
+
 export function StonksMode({ data }: StonksModeProps): ReactNode {
-  const [tick, setTick] = useState(0);
-
-  // Update ticker prices every 2 seconds
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setTick((t) => t + 1);
-    }, 2000);
-    return () => clearInterval(interval);
-  }, []);
-
-  // Generate pseudo-random price fluctuation
-  const fluctuate = (base: number, seed: number) => {
-    const noise =
-      Math.sin(tick * 0.5 + seed) * 5 + Math.cos(tick * 0.3 + seed * 2) * 3;
-    return Math.max(1, base * 10 + noise).toFixed(2);
-  };
+  const [history, setHistory] = useState<RollingHistory>({
+    task: [],
+    bug: [],
+    cafe: [],
+    code: [],
+  });
 
   const taskCompletedCount = data.taskCompletedCount ?? 0;
   const bugFixedCount = data.bugFixedCount ?? 0;
   const coffeeBreakCount = data.coffeeBreakCount ?? 0;
   const codeWrittenCount = data.codeWrittenCount ?? 0;
 
+  // Snapshot metrics into history every 2 seconds.
+  // The interval re-creates when metric values change, ensuring we always
+  // capture the latest values without accessing refs during render.
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setHistory((prev) => ({
+        task: pushValue(prev.task, taskCompletedCount),
+        bug: pushValue(prev.bug, bugFixedCount),
+        cafe: pushValue(prev.cafe, coffeeBreakCount),
+        code: pushValue(prev.code, codeWrittenCount),
+      }));
+    }, 2000);
+    return () => clearInterval(interval);
+  }, [taskCompletedCount, bugFixedCount, coffeeBreakCount, codeWrittenCount]);
+
+  // Compute tool usage total for price display
+  const toolTotal = Object.values(data.toolUsage ?? {}).reduce(
+    (sum, n) => sum + (n ?? 0),
+    0,
+  );
+
+  // Determine trend: compare last two values in history
+  const isUp = (arr: number[], fallback: boolean): boolean => {
+    if (arr.length >= 2) return arr[arr.length - 1] >= arr[arr.length - 2];
+    return fallback;
+  };
+
   const stocks = [
     {
       symbol: "$TASK",
-      value: taskCompletedCount,
-      price: fluctuate(taskCompletedCount || 1, 1),
-      up: taskCompletedCount > 0,
+      price: (taskCompletedCount * 10 + 1).toFixed(2),
+      up: isUp(history.task, taskCompletedCount > 0),
+      history: history.task,
     },
     {
       symbol: "$BUG",
-      value: bugFixedCount,
-      price: fluctuate(bugFixedCount || 1, 2),
-      up: bugFixedCount > 0,
+      price: (bugFixedCount * 10 + 1).toFixed(2),
+      up: isUp(history.bug, bugFixedCount > 0),
+      history: history.bug,
     },
     {
       symbol: "$CAFE",
-      value: coffeeBreakCount,
-      price: fluctuate(coffeeBreakCount || 1, 3),
-      up: coffeeBreakCount > 0,
+      price: (coffeeBreakCount * 10 + 1).toFixed(2),
+      up: isUp(history.cafe, coffeeBreakCount > 0),
+      history: history.cafe,
     },
     {
       symbol: "$CODE",
-      value: codeWrittenCount,
-      price: fluctuate(codeWrittenCount || 1, 4),
-      up: codeWrittenCount > 0,
+      price: (codeWrittenCount * 10 + toolTotal).toFixed(2),
+      up: isUp(history.code, codeWrittenCount > 0),
+      history: history.code,
     },
   ];
 
@@ -82,7 +115,7 @@ export function StonksMode({ data }: StonksModeProps): ReactNode {
             resolution={2}
           />
           <pixiText
-            text={stock.up ? "▲" : "▼"}
+            text={stock.up ? "\u25B2" : "\u25BC"}
             x={85}
             y={3}
             style={{
@@ -103,19 +136,29 @@ export function StonksMode({ data }: StonksModeProps): ReactNode {
             }}
             resolution={2}
           />
-          {/* Mini sparkline */}
+          {/* Mini sparkline from real rolling history */}
           <pixiGraphics
             x={170}
             y={8}
             draw={(g: Graphics) => {
               g.clear();
-              g.moveTo(0, 5);
-              for (let j = 0; j < 8; j++) {
-                const y =
-                  5 +
-                  Math.sin((tick + j) * 0.5 + i) * 4 +
-                  (stock.up ? -j * 0.3 : j * 0.3);
-                g.lineTo(j * 10, y);
+              const hist = stock.history;
+              if (hist.length < 2) {
+                // Not enough data - draw flat line
+                g.moveTo(0, 5);
+                g.lineTo(70, 5);
+                g.stroke({ width: 1, color: 0x9ca3af });
+                return;
+              }
+              const min = Math.min(...hist);
+              const max = Math.max(...hist);
+              const range = max - min || 1;
+              const stepX = 70 / (hist.length - 1);
+              const height = 10;
+              g.moveTo(0, height - ((hist[0] - min) / range) * height);
+              for (let j = 1; j < hist.length; j++) {
+                const y = height - ((hist[j] - min) / range) * height;
+                g.lineTo(j * stepX, y);
               }
               g.stroke({ width: 1, color: stock.up ? 0x22c55e : 0xef4444 });
             }}

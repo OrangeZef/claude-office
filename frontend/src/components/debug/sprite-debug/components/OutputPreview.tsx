@@ -240,7 +240,7 @@ export function OutputPreview({
         </button>
         <button
           onClick={handleCopyConfig}
-          className="px-3 py-2 bg-blue-600 hover:bg-blue-700 rounded text-sm font-medium"
+          className="px-3 py-2 bg-yellow-400 text-black hover:bg-yellow-500 rounded text-sm font-medium"
         >
           📋 Copy Config
         </button>

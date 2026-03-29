@@ -3,11 +3,15 @@
  *
  * Procedurally drawn pixel-art server rack placed in the bottom-right
  * corner of the office (~52px wide × 90px tall).
+ *
+ * LED colors are now data-driven based on context utilization and
+ * connection status, with a subtle blink animation based on activity level.
  */
 
 "use client";
 
-import { memo, useCallback } from "react";
+import { memo, useState, type ReactNode } from "react";
+import { useTick } from "@pixi/react";
 import { Graphics } from "pixi.js";
 
 // ============================================================================
@@ -17,13 +21,20 @@ import { Graphics } from "pixi.js";
 export interface ServerRackProps {
   x?: number;
   y?: number;
+  contextUtilization?: number;
+  isConnected?: boolean;
+  activityLevel?: number;
 }
 
 // ============================================================================
 // DRAW FUNCTION
 // ============================================================================
 
-function drawServerRack(g: Graphics): void {
+function drawServerRack(
+  g: Graphics,
+  ledColor: number,
+  ledAlpha: number,
+): void {
   g.clear();
 
   const W = 52;
@@ -77,14 +88,13 @@ function drawServerRack(g: Graphics): void {
       g.stroke({ width: 1, color: 0x1a1a2e });
     }
 
-    // Status LEDs on right: green (active) + orange (warn)
-    // LED 1 — green active
+    // Status LED 1 — dynamic color based on context utilization
     g.circle(serverStartX + serverW - 8, sy + 4, 2);
-    g.fill(0x00ff44);
+    g.fill({ color: ledColor, alpha: ledAlpha });
 
-    // LED 2 — orange warn
+    // Status LED 2 — secondary indicator (slightly dimmer)
     g.circle(serverStartX + serverW - 4, sy + 4, 2);
-    g.fill(0xff8800);
+    g.fill({ color: ledColor, alpha: ledAlpha * 0.7 });
   }
 
   // Cable management area at bottom
@@ -112,8 +122,41 @@ function drawServerRack(g: Graphics): void {
 // COMPONENT
 // ============================================================================
 
-function ServerRackComponent({ x = 1160, y = 900 }: ServerRackProps) {
-  const draw = useCallback((g: Graphics) => drawServerRack(g), []);
+function ServerRackComponent({
+  x = 1160,
+  y = 900,
+  contextUtilization = 0,
+  isConnected = true,
+  activityLevel = 0,
+}: ServerRackProps): ReactNode {
+  // LED blink animation state
+  const [blinkAlpha, setBlinkAlpha] = useState(1.0);
+
+  useTick((ticker) => {
+    // Blink speed scales with activity level (0 = no blink, higher = faster)
+    const blinkSpeed = 0.03 + activityLevel * 0.05;
+    setBlinkAlpha((prev) => {
+      const next = prev + ticker.deltaTime * blinkSpeed;
+      // Oscillate between 0.7 and 1.0
+      return 0.7 + Math.abs(Math.sin(next)) * 0.3;
+    });
+  });
+
+  // Determine LED color based on state
+  let ledColor: number;
+  if (!isConnected) {
+    ledColor = 0x333333; // dark/off
+  } else if (contextUtilization > 0.8) {
+    ledColor = 0xef4444; // red
+  } else if (contextUtilization > 0.5) {
+    ledColor = 0xf59e0b; // amber
+  } else {
+    ledColor = 0x22c55e; // green
+  }
+
+  const effectiveAlpha = isConnected ? blinkAlpha : 0.3;
+
+  const draw = (g: Graphics) => drawServerRack(g, ledColor, effectiveAlpha);
 
   return (
     <pixiContainer x={x} y={y}>

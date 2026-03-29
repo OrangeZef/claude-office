@@ -10,6 +10,7 @@
 
 import { memo, useRef, useCallback, useState, useMemo } from "react";
 import { useGameStore } from "@/stores/gameStore";
+import { usePreferencesStore } from "@/stores/preferencesStore";
 import { useTick } from "@pixi/react";
 import { Graphics, TextStyle, Texture } from "pixi.js";
 
@@ -26,9 +27,33 @@ const NUM_DESKS = 8;
 const ELEVATOR_ENTRY = { x: 86, y: 300 };
 const WALK_SPEED = 60; // px/s
 
+// Edge aisle X — matches real agent queue positions (left edge, clear of all desks)
+const AISLE_X = 70;
+
+/**
+ * Build waypoints mimicking real agent pathing — stay along left edge aisle,
+ * then approach desk from the side at desk Y (not from above through the chair).
+ * Path: elevator → left aisle → desk row Y → desk position
+ */
+function buildPathToDesk(desk: { x: number; y: number }, _deskNum: number): { x: number; y: number }[] {
+  return [
+    { x: AISLE_X, y: ELEVATOR_ENTRY.y },  // Exit elevator into left aisle
+    { x: AISLE_X, y: desk.y },            // Walk down aisle to desk row Y (staying on left edge)
+    { x: desk.x, y: desk.y },             // Walk horizontally to desk (at sitting Y, behind desks)
+  ];
+}
+
+function buildPathFromDesk(desk: { x: number; y: number }, _deskNum: number): { x: number; y: number }[] {
+  return [
+    { x: AISLE_X, y: desk.y },            // Walk left to aisle (at desk Y, behind desks)
+    { x: AISLE_X, y: ELEVATOR_ENTRY.y },   // Walk up aisle to elevator
+    { x: ELEVATOR_ENTRY.x, y: ELEVATOR_ENTRY.y }, // Walk to elevator
+  ];
+}
+
 // Sprite sizing (matches AgentSprite scale)
-const SPRITE_DISPLAY_W = 48 * 1.8;
-const SPRITE_DISPLAY_H = 80 * 1.8;
+const SPRITE_DISPLAY_W = 48 * 2.1;
+const SPRITE_DISPLAY_H = 80 * 2.1;
 
 const COMMENTS = [
   "busy day!", "where's the coffee?", "git push...", "404: break not found",
@@ -96,7 +121,7 @@ function getDeskPos(deskNum: number): { x: number; y: number } {
   const col = i % 4;
   return {
     x: DESK_START_X + col * DESK_SPACING_X,
-    y: DESK_START_Y + row * DESK_SPACING_Y,
+    y: DESK_START_Y + row * DESK_SPACING_Y + 67, // +67 so legs are hidden behind desk surface (sitting illusion)
   };
 }
 
@@ -171,6 +196,8 @@ function IdleWorkerComponent({
   const chosenDeskPosRef = useRef(getDeskPos(1));
   const variantIndexRef = useRef(0);
   const frameIndexRef = useRef(0);
+  const waypointsRef = useRef<{ x: number; y: number }[]>([]);
+  const waypointIdxRef = useRef(0);
 
   const [renderState, setRenderState] = useState({
     x: ELEVATOR_ENTRY.x,
@@ -194,8 +221,11 @@ function IdleWorkerComponent({
     [],
   );
 
+  const idleAnimationSpeed = usePreferencesStore((s) => s.animationSpeed);
+  const idleSpeedMultiplier = idleAnimationSpeed === "slow" ? 0.5 : idleAnimationSpeed === "fast" ? 2.0 : 1.0;
+
   useTick((ticker) => {
-    const dt = ticker.deltaTime / 60;
+    const dt = (ticker.deltaTime / 60) * idleSpeedMultiplier;
     const phase = phaseRef.current;
     const pos = posRef.current;
     const occupied = occupiedDeskNumsRef.current;
@@ -216,6 +246,8 @@ function IdleWorkerComponent({
         frameIndexRef.current = 0;
         posRef.current = { ...ELEVATOR_ENTRY };
         onClaimDesk?.(deskNum);
+        waypointsRef.current = buildPathToDesk(chosenDeskPosRef.current, chosenDeskNumRef.current);
+        waypointIdxRef.current = 0;
         phaseRef.current = "elevator_in";
         phaseTimerRef.current = 1.8;
         openElevatorShared();
@@ -238,7 +270,7 @@ function IdleWorkerComponent({
       const frames = workerVariants[variantIndexRef.current];
       if (frames && frames.length > 1) {
         frameIndexRef.current =
-          (frameIndexRef.current + ticker.deltaTime * 0.12) % frames.length;
+          (frameIndexRef.current + ticker.deltaTime * 0.12 * idleSpeedMultiplier) % frames.length;
       }
     }
 
@@ -254,21 +286,31 @@ function IdleWorkerComponent({
     }
 
     if (phase === "walking_in") {
-      const desk = chosenDeskPosRef.current;
-      const dx = desk.x - pos.x;
-      const dy = desk.y - pos.y;
+      const waypoints = waypointsRef.current;
+      const wpIdx = waypointIdxRef.current;
+      const target = wpIdx < waypoints.length ? waypoints[wpIdx] : chosenDeskPosRef.current;
+      const dx = target.x - pos.x;
+      const dy = target.y - pos.y;
       const dist = Math.sqrt(dx * dx + dy * dy);
       if (dist < 2) {
-        posRef.current = { ...desk };
-        phaseRef.current = "sitting";
-        phaseTimerRef.current = 18 + Math.random() * 20;
-        setRenderState((s) => ({
-          ...s,
-          x: desk.x,
-          y: desk.y,
-          frameIndex: Math.floor(frameIndexRef.current),
-        }));
-        return;
+        posRef.current = { ...target };
+        if (wpIdx < waypoints.length - 1) {
+          // Move to next waypoint
+          waypointIdxRef.current = wpIdx + 1;
+        } else {
+          // Arrived at desk
+          const desk = chosenDeskPosRef.current;
+          posRef.current = { ...desk };
+          phaseRef.current = "sitting";
+          phaseTimerRef.current = 18 + Math.random() * 20;
+          setRenderState((s) => ({
+            ...s,
+            x: desk.x,
+            y: desk.y,
+            frameIndex: Math.floor(frameIndexRef.current),
+          }));
+          return;
+        }
       }
       const step = WALK_SPEED * dt;
       const newX = pos.x + (dx / dist) * Math.min(step, dist);
@@ -288,6 +330,8 @@ function IdleWorkerComponent({
       // Yield desk if a real agent has taken it
       if (agentOccupiedDeskNumsRef.current.has(chosenDeskNumRef.current)) {
         currentCommentRef.current = null;
+        waypointsRef.current = buildPathFromDesk(chosenDeskPosRef.current, chosenDeskNumRef.current);
+        waypointIdxRef.current = 0;
         phaseRef.current = "walking_out";
         setRenderState((s) => ({ ...s, comment: null }));
         return;
@@ -319,6 +363,9 @@ function IdleWorkerComponent({
 
       if (phaseTimerRef.current <= 0) {
         currentCommentRef.current = null;
+        // Build return path waypoints
+        waypointsRef.current = buildPathFromDesk(chosenDeskPosRef.current, chosenDeskNumRef.current);
+        waypointIdxRef.current = 0;
         phaseRef.current = "walking_out";
         setRenderState((s) => ({ ...s, comment: null }));
       }
@@ -326,17 +373,25 @@ function IdleWorkerComponent({
     }
 
     if (phase === "walking_out") {
-      const dx = ELEVATOR_ENTRY.x - pos.x;
-      const dy = ELEVATOR_ENTRY.y - pos.y;
+      const waypoints = waypointsRef.current;
+      const wpIdx = waypointIdxRef.current;
+      const target = wpIdx < waypoints.length ? waypoints[wpIdx] : ELEVATOR_ENTRY;
+      const dx = target.x - pos.x;
+      const dy = target.y - pos.y;
       const dist = Math.sqrt(dx * dx + dy * dy);
       if (dist < 2) {
-        onReleaseDesk?.(chosenDeskNumRef.current);
-        phaseRef.current = "elevator_out";
-        phaseTimerRef.current = 1.8;
-        openElevatorShared();
-        posRef.current = { ...ELEVATOR_ENTRY };
-        setRenderState((s) => ({ ...s, x: ELEVATOR_ENTRY.x, y: ELEVATOR_ENTRY.y, facingLeft: false, comment: null }));
-        return;
+        posRef.current = { ...target };
+        if (wpIdx < waypoints.length - 1) {
+          waypointIdxRef.current = wpIdx + 1;
+        } else {
+          onReleaseDesk?.(chosenDeskNumRef.current);
+          phaseRef.current = "elevator_out";
+          phaseTimerRef.current = 1.8;
+          openElevatorShared();
+          posRef.current = { ...ELEVATOR_ENTRY };
+          setRenderState((s) => ({ ...s, x: ELEVATOR_ENTRY.x, y: ELEVATOR_ENTRY.y, facingLeft: false, comment: null }));
+          return;
+        }
       }
       const step = WALK_SPEED * dt;
       const newX = pos.x + (dx / dist) * Math.min(step, dist);

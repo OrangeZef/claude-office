@@ -163,7 +163,8 @@ class WhiteboardTracker:
             self.code_written_count += 1
             file_path = tool_input.get("file_path", "")
             if isinstance(file_path, str) and file_path:
-                file_name = file_path.split("/")[-1] if "/" in file_path else file_path
+                parts = file_path.split("/")
+                file_name = "/".join(parts[-2:]) if len(parts) >= 2 else file_path
                 self.file_edits[file_name] = self.file_edits.get(file_name, 0) + 1
 
         if tool_name == "Bash":

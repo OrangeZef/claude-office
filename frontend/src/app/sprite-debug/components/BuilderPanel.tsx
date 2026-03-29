@@ -113,7 +113,7 @@ export function BuilderPanel() {
             <div className="flex gap-2">
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="px-2 py-1 bg-blue-600 hover:bg-blue-700 rounded text-xs"
+                className="px-2 py-1 bg-yellow-400 text-black hover:bg-yellow-500 rounded text-xs"
               >
                 📁 Browse
               </button>

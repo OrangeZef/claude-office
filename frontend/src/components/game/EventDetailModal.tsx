@@ -26,7 +26,7 @@ function getEventTypeColor(type: string): string {
     case "session_start":
       return "bg-green-500/20 text-green-300 border-green-500/40";
     case "session_end":
-      return "bg-slate-500/20 text-slate-300 border-slate-500/40";
+      return "bg-neutral-500/20 text-slate-300 border-neutral-500/40";
     case "stop":
       return "bg-rose-500/20 text-rose-300 border-rose-500/40";
     case "error":
@@ -34,7 +34,7 @@ function getEventTypeColor(type: string): string {
     case "background_task_notification":
       return "bg-teal-500/20 text-teal-300 border-teal-500/40";
     default:
-      return "bg-slate-500/20 text-slate-300 border-slate-500/40";
+      return "bg-neutral-500/20 text-slate-300 border-neutral-500/40";
   }
 }
 
@@ -72,9 +72,9 @@ export function EventDetailModal({ event, onClose }: EventDetailModalProps) {
       />
 
       {/* Modal Panel */}
-      <div className="relative z-10 w-full max-w-2xl max-h-[80vh] flex flex-col bg-slate-900 border border-slate-700 rounded-xl shadow-2xl overflow-hidden font-mono text-xs">
+      <div className="relative z-10 w-full max-w-2xl max-h-[80vh] flex flex-col bg-neutral-900 border border-neutral-700 rounded-xl shadow-2xl overflow-hidden font-mono text-xs">
         {/* Header */}
-        <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-700 bg-slate-950 flex-shrink-0">
+        <div className="flex items-center gap-3 px-4 py-3 border-b border-neutral-700 bg-neutral-950 flex-shrink-0">
           <span
             className={`px-2 py-0.5 rounded border text-[10px] font-bold uppercase tracking-wider ${getEventTypeColor(event.type)}`}
           >
@@ -90,7 +90,7 @@ export function EventDetailModal({ event, onClose }: EventDetailModalProps) {
           )}
           <button
             onClick={onClose}
-            className="ml-auto p-1.5 text-slate-500 hover:text-white hover:bg-slate-700 rounded transition-colors"
+            className="ml-auto p-1.5 text-slate-500 hover:text-white hover:bg-neutral-700 rounded transition-colors"
             aria-label="Close"
           >
             <X size={14} />
@@ -148,7 +148,7 @@ export function EventDetailModal({ event, onClose }: EventDetailModalProps) {
                   <div className="text-slate-500 text-[10px] uppercase tracking-widest mb-1">
                     User Prompt
                   </div>
-                  <div className="text-cyan-200 text-[12px] whitespace-pre-wrap leading-relaxed bg-slate-800/50 rounded p-2 border border-slate-700">
+                  <div className="text-cyan-200 text-[12px] whitespace-pre-wrap leading-relaxed bg-neutral-800/50 rounded p-2 border border-neutral-700">
                     {String(detail.prompt)}
                   </div>
                 </div>
@@ -159,7 +159,7 @@ export function EventDetailModal({ event, onClose }: EventDetailModalProps) {
                   <div className="text-slate-500 text-[10px] uppercase tracking-widest mb-1">
                     Thinking
                   </div>
-                  <div className="text-slate-400 italic text-[12px] whitespace-pre-wrap leading-relaxed bg-slate-800/30 rounded p-2 border border-slate-700/50">
+                  <div className="text-slate-400 italic text-[12px] whitespace-pre-wrap leading-relaxed bg-neutral-800/30 rounded p-2 border border-neutral-700/50">
                     {String(detail.thinking)}
                   </div>
                 </div>
@@ -203,7 +203,7 @@ export function EventDetailModal({ event, onClose }: EventDetailModalProps) {
                   <div className="text-slate-500 text-[10px] uppercase tracking-widest mb-1">
                     Tool Input
                   </div>
-                  <pre className="text-slate-300 text-[11px] bg-slate-800 rounded p-3 border border-slate-700 overflow-x-auto whitespace-pre-wrap break-words leading-relaxed">
+                  <pre className="text-slate-300 text-[11px] bg-neutral-800 rounded p-3 border border-neutral-700 overflow-x-auto whitespace-pre-wrap break-words leading-relaxed">
                     {JSON.stringify(detail.toolInput, null, 2)}
                   </pre>
                 </div>
@@ -217,10 +217,10 @@ export function EventDetailModal({ event, onClose }: EventDetailModalProps) {
         </div>
 
         {/* Footer */}
-        <div className="flex-shrink-0 px-4 py-3 border-t border-slate-700 bg-slate-950 flex justify-end">
+        <div className="flex-shrink-0 px-4 py-3 border-t border-neutral-700 bg-neutral-950 flex justify-end">
           <button
             onClick={onClose}
-            className="px-4 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-bold rounded transition-colors"
+            className="px-4 py-1.5 bg-neutral-700 hover:bg-neutral-600 text-slate-200 text-xs font-bold rounded transition-colors"
           >
             Close
           </button>

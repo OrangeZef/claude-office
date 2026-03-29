@@ -37,7 +37,7 @@ pre,
   }
 
   .glow-green {
-    box-shadow: 0 0 15px rgba(0, 255, 0, 0.3);
+    box-shadow: 0 0 15px rgba(34, 197, 94, 0.3);
   }
 
   /* PixiJS Canvas Scaling — let TransformWrapper own all scaling */
@@ -63,7 +63,7 @@ pre,
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: #00ff00; /* green secondary accent */
+    background: #22c55e; /* green secondary accent */
     border: 2px solid transparent;
     background-clip: padding-box;
   }
@@ -93,7 +93,7 @@ pre,
   }
 
   .shadow-green-glow {
-    box-shadow: 0 0 20px rgba(0, 255, 0, 0.25);
+    box-shadow: 0 0 20px rgba(34, 197, 94, 0.25);
   }
 
   .shadow-red-glow {

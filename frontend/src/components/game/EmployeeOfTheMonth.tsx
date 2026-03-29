@@ -9,7 +9,11 @@ import { useCallback, useState, useEffect, type ReactNode } from "react";
  * Displays a framed poster with "Employee of the Month" header
  * and a pixel art portrait.
  */
-export function EmployeeOfTheMonth(): ReactNode {
+export interface EmployeeOfTheMonthProps {
+  topAgent?: { name: string };
+}
+
+export function EmployeeOfTheMonth({ topAgent }: EmployeeOfTheMonthProps): ReactNode {
   const [photoTexture, setPhotoTexture] = useState<Texture | null>(null);
 
   useEffect(() => {
@@ -117,7 +121,7 @@ export function EmployeeOfTheMonth(): ReactNode {
       {/* Name plate text */}
       <pixiContainer x={60} y={144} scale={0.5}>
         <pixiText
-          text="MEGUMIN"
+          text={topAgent?.name ?? "MEGUMIN"}
           anchor={0.5}
           style={{
             fontFamily: '"Arial Black", Arial, sans-serif',

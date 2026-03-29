@@ -502,9 +502,6 @@ class AgentMachineService {
     const hasPersistentBubble = store.boss.bubble.content?.persistent === true;
 
     if (isCompleting || hasPersistentBubble) {
-      console.log(
-        `[AgentMachineService] Skipping boss bubble "${text.slice(0, 30)}..." - isCompleting=${isCompleting}, hasPersistentBubble=${hasPersistentBubble}`,
-      );
       return;
     }
 

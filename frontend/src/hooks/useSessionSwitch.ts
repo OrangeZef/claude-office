@@ -111,6 +111,20 @@ export function useSessionSwitch({
       );
       if (res.ok) {
         showStatus("Simulation started!", "success");
+        // Fetch updated sessions list and auto-select the newest one
+        const updatedSessions = await fetchSessions();
+        if (updatedSessions && updatedSessions.length > 0) {
+          const newest = updatedSessions[0]; // sessions are sorted by updatedAt desc
+          if (newest && newest.id !== sessionId) {
+            agentMachineService.reset();
+            useGameStore.getState().resetForSessionSwitch();
+            setSessionId(newest.id);
+            showStatus(
+              `Switched to simulated session ${newest.projectName || newest.id.slice(0, 8)}`,
+              "success",
+            );
+          }
+        }
       } else {
         showStatus("Failed to trigger simulation.", "error");
       }

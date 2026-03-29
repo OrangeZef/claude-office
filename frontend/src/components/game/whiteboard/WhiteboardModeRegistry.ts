@@ -26,7 +26,7 @@ export const MODE_INFO: Record<WhiteboardMode, ModeInfo> = {
   6: { name: "SAFETY", icon: "⚠️" },
   7: { name: "TIMELINE", icon: "📅" },
   8: { name: "NEWS", icon: "📰" },
-  9: { name: "COFFEE", icon: "☕" },
+  9: { name: "CONTEXT", icon: "📊" },
   10: { name: "HEATMAP", icon: "🔥" },
 };
 

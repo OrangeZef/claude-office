@@ -15,6 +15,8 @@ import { useSessionSwitch } from "@/hooks/useSessionSwitch";
 import {
   useGameStore,
   selectIsConnected,
+  selectIsReconnecting,
+  selectReconnectAttempt,
   selectDebugMode,
   selectAgents,
   selectBoss,
@@ -33,6 +35,7 @@ import {
 import Modal from "@/components/overlay/Modal";
 import SettingsModal from "@/components/overlay/SettingsModal";
 import { usePreferencesStore } from "@/stores/preferencesStore";
+import { OfficeErrorBoundary } from "@/components/game/ErrorBoundary";
 import type { Session } from "@/hooks/useSessions";
 import { API_BASE_URL } from "@/lib/apiBase";
 
@@ -48,7 +51,7 @@ const OfficeGame = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="w-full h-full bg-slate-900 animate-pulse flex items-center justify-center text-white font-mono text-center">
+      <div className="w-full h-full bg-neutral-900 animate-pulse flex items-center justify-center text-white font-mono text-center">
         Initializing Systems...
       </div>
     ),
@@ -109,6 +112,8 @@ export default function V2TestPage(): React.ReactNode {
   // Store subscriptions
   // ------------------------------------------------------------------
   const isConnected = useGameStore(selectIsConnected);
+  const isReconnecting = useGameStore(selectIsReconnecting);
+  const reconnectAttempt = useGameStore(selectReconnectAttempt);
   const debugMode = useGameStore(selectDebugMode);
   const agents = useGameStore(useShallow(selectAgents));
   const boss = useGameStore(selectBoss);
@@ -213,37 +218,31 @@ export default function V2TestPage(): React.ReactNode {
         footer={
           <button
             onClick={() => setIsHelpModalOpen(false)}
-            className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white text-sm font-bold rounded-lg transition-colors"
+            className="px-4 py-2 bg-neutral-700 hover:bg-neutral-600 text-white text-sm font-bold rounded-lg transition-colors"
           >
             Close
           </button>
         }
       >
-        <div className="space-y-3 font-mono text-sm">
-          <div className="flex justify-between items-center py-2 border-b border-slate-700">
-            <kbd className="px-2 py-1 bg-slate-800 rounded text-white font-bold">
-              D
-            </kbd>
-            <span className="text-slate-300">Toggle debug mode</span>
-          </div>
-          <div className="flex justify-between items-center py-2 border-b border-slate-700">
-            <kbd className="px-2 py-1 bg-slate-800 rounded text-white font-bold">
-              P
-            </kbd>
-            <span className="text-slate-300">Show agent paths</span>
-          </div>
-          <div className="flex justify-between items-center py-2 border-b border-slate-700">
-            <kbd className="px-2 py-1 bg-slate-800 rounded text-white font-bold">
-              Q
-            </kbd>
-            <span className="text-slate-300">Show queue slots</span>
-          </div>
-          <div className="flex justify-between items-center py-2">
-            <kbd className="px-2 py-1 bg-slate-800 rounded text-white font-bold">
-              L
-            </kbd>
-            <span className="text-slate-300">Show phase labels</span>
-          </div>
+        <div className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 font-mono text-sm items-center">
+          {[
+            ["D", "Toggle debug mode"],
+            ["P", "Toggle pathfinding paths (debug)"],
+            ["Q", "Toggle queue slots (debug)"],
+            ["L", "Toggle phase labels (debug)"],
+            ["O", "Toggle obstacles (debug)"],
+            ["+/\u2212", "Zoom in/out"],
+            ["1:1", "Reset zoom"],
+            ["F", "Toggle fullscreen"],
+            ["Dbl-click", "Reset view"],
+          ].map(([key, desc]) => (
+            <div key={key} className="contents">
+              <kbd className="bg-neutral-800 text-yellow-400 px-2 py-0.5 rounded font-mono text-xs text-center whitespace-nowrap">
+                {key}
+              </kbd>
+              <span className="text-slate-300 text-sm">{desc}</span>
+            </div>
+          ))}
         </div>
       </Modal>
 
@@ -295,7 +294,7 @@ export default function V2TestPage(): React.ReactNode {
           {isMobile && (
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-white transition-colors"
+              className="p-2 bg-neutral-800 hover:bg-neutral-700 rounded-lg text-white transition-colors"
             >
               {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
@@ -364,10 +363,22 @@ export default function V2TestPage(): React.ReactNode {
       {/* ----------------------------------------------------------------
           Main Content
       ---------------------------------------------------------------- */}
+      {/* Reconnection banner */}
+      {isReconnecting && (
+        <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 px-5 py-2 rounded-full border border-amber-400/50 bg-black/90 shadow-lg shadow-amber-400/15 backdrop-blur-md flex items-center gap-3 text-[11px] font-mono font-bold tracking-widest uppercase whitespace-nowrap animate-pulse">
+          <span className="inline-block w-2 h-2 rounded-full bg-amber-400" />
+          <span className="text-amber-400">
+            Reconnecting to office...{reconnectAttempt > 0 ? ` (attempt ${reconnectAttempt})` : ""}
+          </span>
+        </div>
+      )}
+
       {isMobile ? (
         <div className="flex-grow flex flex-col gap-1.5 overflow-hidden min-h-0">
-          <div className="flex-[3] border border-slate-800 rounded-lg shadow-2xl bg-slate-900 overflow-hidden relative min-h-0">
-            <OfficeGame />
+          <div className="flex-[3] border border-neutral-800 rounded-lg shadow-2xl bg-neutral-900 overflow-hidden relative min-h-0">
+            <OfficeErrorBoundary>
+              <OfficeGame />
+            </OfficeErrorBoundary>
           </div>
           <MobileAgentActivity agents={agents} boss={boss} />
         </div>
@@ -383,10 +394,13 @@ export default function V2TestPage(): React.ReactNode {
             }
             onSessionSelect={handleSessionSelect}
             onDeleteSession={setSessionPendingDelete}
+            onRefreshSessions={fetchSessions}
           />
 
-          <div className="flex-grow border border-slate-800 rounded-lg shadow-2xl bg-slate-900 overflow-hidden relative">
-            <OfficeGame />
+          <div className="flex-grow border-2 border-neutral-700 rounded-lg bg-neutral-900 overflow-hidden relative" style={{ boxShadow: "inset 0 0 30px rgba(0,0,0,0.6), 0 0 15px rgba(0,0,0,0.8), 0 4px 6px rgba(0,0,0,0.5)" }}>
+            <OfficeErrorBoundary>
+              <OfficeGame />
+            </OfficeErrorBoundary>
           </div>
 
           <RightSidebar />

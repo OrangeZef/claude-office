@@ -144,7 +144,7 @@ export function useOfficeTextures(): UseOfficeTexturesResult {
         );
 
         // Load anime frame arrays — gracefully skip any that fail
-        const bossFramePaths = [0, 1, 2, 3, 4, 5].map(
+        const bossFramePaths = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map(
           (i) => `/sprites/anime-boss-${i}.png`,
         );
 
@@ -163,7 +163,7 @@ export function useOfficeTextures(): UseOfficeTexturesResult {
         const variantResults = await Promise.all(
           variantNames.map((name) =>
             Promise.all(
-              [0, 1, 2, 3, 4, 5].map((i) =>
+              [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((i) =>
                 Assets.load(`/sprites/${name}-${i}.png`).catch(() => null),
               ),
             ),

@@ -231,11 +231,11 @@ export function getDeskPosition(deskNum: number): Position {
   const col = index % rowSize;
   // Grid-aligned positions: 256, 512, 768, 1024
   const xStart = 256;
-  // Chair center is at desk origin (408) + 30 = 438
-  // Agent body center should be 24px above chair (like boss): 438 - 24 = 414
-  // Agent bottom circle center is 18px below body center: 414 + 18 = 432
+  // Desk surface is at desk origin + 30 = 438. To create a sitting illusion,
+  // the character's feet must be well below the desk surface so legs are hidden.
+  // With 168px tall sprites, feet at 475 means ~37px of legs behind desk.
   return {
     x: xStart + col * 256,
-    y: 432 + row * 192, // Agent bottom circle center for proper chair seating
+    y: 475 + row * 192,
   };
 }

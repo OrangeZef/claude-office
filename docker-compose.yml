@@ -13,6 +13,7 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: claude-office
+    # If you need docker socket access, add: group_add: ["$(getent group docker | cut -d: -f3)"]
     ports:
       - "8000:8000"
     volumes:
@@ -21,6 +22,8 @@ services:
       - ${CLAUDE_DATA_DIR:-~/.claude}:/claude-data:ro
       # Persist SQLite database
       - claude-office-db:/app/data
+      # Docker socket for container status monitoring (read-only)
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     environment:
       # Path translation for Docker
       # Host path prefix that appears in transcript_path from hooks

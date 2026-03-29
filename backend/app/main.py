@@ -83,7 +83,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=settings.BACKEND_CORS_ORIGINS,
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -107,6 +107,15 @@ async def get_status() -> dict[str, bool | str | None]:
         "aiSummaryEnabled": summary_service.enabled,
         "aiSummaryModel": summary_service.model if summary_service.enabled else None,
     }
+
+
+@app.get("/api/v1/docker/status")
+async def get_docker_status() -> dict[str, list[dict]]:
+    """Get status of all Docker containers (cached)."""
+    from app.services.docker_service import docker_service
+
+    containers = await docker_service.get_containers()
+    return {"containers": containers}
 
 
 @app.websocket("/ws/{session_id}")

@@ -39,6 +39,12 @@ export function useWebSocketEvents({
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const processedAgentsRef = useRef<Set<string>>(new Set());
 
+  // Exponential backoff state for reconnection
+  const reconnectDelayRef = useRef(1000);
+  const reconnectAttemptRef = useRef(0);
+  const RECONNECT_DELAY_INITIAL = 1000;
+  const RECONNECT_DELAY_MAX = 30000;
+
   // Connection ID to track which connection is current (prevents stale onclose handlers)
   const connectionIdRef = useRef(0);
 
@@ -212,25 +218,12 @@ export function useWebSocketEvents({
       if (state.boss.bubble) {
         const bubbleText = state.boss.bubble.text;
         const lastSeen = lastSeenBubbleTextRef.current.get("boss");
-        const isPersistent = state.boss.bubble.persistent;
-        console.log(
-          `[WS] Boss bubble received: "${bubbleText?.slice(0, 30)}..." persistent=${isPersistent} lastSeen="${lastSeen?.slice(0, 20)}..."`,
-        );
         // Only enqueue if backend sent a NEW bubble text (not the same as last time)
         if (bubbleText !== lastSeen) {
           lastSeenBubbleTextRef.current.set("boss", bubbleText);
-          const alreadyHas = store.hasBubbleText("boss", bubbleText);
-          console.log(
-            `[WS] Boss bubble NEW text, alreadyHas=${alreadyHas}, compactionPhase=${store.compactionPhase}`,
-          );
-          if (!alreadyHas) {
-            console.log(
-              `[WS] Enqueueing boss bubble: "${bubbleText?.slice(0, 30)}..."`,
-            );
+          if (!store.hasBubbleText("boss", bubbleText)) {
             enqueueBubble("boss", state.boss.bubble);
           }
-        } else {
-          console.log(`[WS] Boss bubble SKIPPED (same as lastSeen)`);
         }
       }
 
@@ -436,6 +429,11 @@ export function useWebSocketEvents({
       setConnected(true);
       setSessionId(sessionId);
 
+      // Reset reconnection state on successful connection
+      reconnectDelayRef.current = RECONNECT_DELAY_INITIAL;
+      reconnectAttemptRef.current = 0;
+      useGameStore.getState().setReconnecting(false, 0);
+
       // Clear processed agents, bubble tracking, and reset spawn positions on reconnect
       processedAgentsRef.current.clear();
       lastSeenBubbleTextRef.current.clear();
@@ -467,15 +465,28 @@ export function useWebSocketEvents({
       void event; // Acknowledge parameter
       setConnected(false);
 
-      // Attempt reconnection after 2 seconds if still enabled and same session
+      // Attempt reconnection with exponential backoff if still enabled and same session
       if (enabled && sessionId === currentSessionIdRef.current) {
+        reconnectAttemptRef.current++;
+        const attempt = reconnectAttemptRef.current;
+        const delay = reconnectDelayRef.current;
+
+        // Update store so UI can show reconnecting banner
+        useGameStore.getState().setReconnecting(true, attempt);
+
         reconnectTimeoutRef.current = setTimeout(() => {
           reconnectTimeoutRef.current = null;
           // Double-check we're still on the same session before reconnecting
           if (sessionId === currentSessionIdRef.current) {
             connect();
           }
-        }, 2000);
+        }, delay);
+
+        // Exponential backoff: double the delay, cap at 30s
+        reconnectDelayRef.current = Math.min(
+          delay * 2,
+          RECONNECT_DELAY_MAX,
+        );
       }
     };
   }, [sessionId, enabled, handleMessage, setConnected, setSessionId]);
